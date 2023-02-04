@@ -51,6 +51,7 @@ class C64loader(DemoPart):
 class RasterBar(DemoPart):
 
     TEXT = 'This is dedicated to\nCsico "raster bar" Laszlo'
+    EASE_DURATION = 60
 
     # colors and width of lines that a single bar is composed of
     BAR = (
@@ -60,8 +61,6 @@ class RasterBar(DemoPart):
         (pyxel.COLOR_YELLOW, 2),
         (pyxel.COLOR_ORANGE, 1)
     )
-
-    EASE_DURATION = 60
 
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
@@ -85,18 +84,27 @@ class GuruMeditation(DemoPart):
     SCROLL_TEXT = "Just kidding! :) But you have to be old enough to get the joke..."
     DYCP_HEIGHT = 20
     SCROLL_DELAY = 90
+    EASE_OUT_DURATION = 20
+    last_letter_x = None
 
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
 
-        a = self.tick // 15 % 2
-        if a == 0:
-            pyxel.rectb(0, 0, pyxel.width, pyxel.FONT_HEIGHT * 3, pyxel.COLOR_RED)
+        if self.last_letter_x is not None and self.last_letter_x <= self.EASE_OUT_DURATION:
+            current_delta = self.EASE_OUT_DURATION - self.last_letter_x
+            box_y = int(-pyxel.FONT_HEIGHT * 3 * EaseIn(self.EASE_OUT_DURATION, current_delta))
+        else:
+            box_y = 0
+        
+        border_blink = self.tick // 15 % 2
+        if border_blink == 0:
+            pyxel.rectb(0, box_y, pyxel.width, pyxel.FONT_HEIGHT * 3, pyxel.COLOR_RED)
+
         for i, line in enumerate(self.GURU_TEXT):
             w = len(line) * pyxel.FONT_WIDTH
             x = (pyxel.width - w) // 2
             pyxel.text(
-                x, 3 + i * pyxel.FONT_HEIGHT,
+                x, box_y + 3 + i * pyxel.FONT_HEIGHT,
                 line,
                 pyxel.COLOR_RED
             )
@@ -104,15 +112,19 @@ class GuruMeditation(DemoPart):
         if self.tick > self.SCROLL_DELAY:
             for i, letter in enumerate(self.SCROLL_TEXT):
                 x = pyxel.width - self.tick + self.SCROLL_DELAY + i * pyxel.FONT_WIDTH
+
+                # only draw the letter if any part of it is in the visible area
                 if -pyxel.FONT_WIDTH < x < pyxel.width:
                     rot = (self.tick - i * 2) * 5
                     y = pyxel.height // 2 + self.DYCP_HEIGHT * pyxel.sin(rot)
                     # the first 2 color are fairly dark, let's use only rest of the 16 color palette
                     color = (self.tick + i) % 14 + 2
                     pyxel.text(x, y, letter, color)
-                if i == len(self.SCROLL_TEXT)-1 and x == -pyxel.FONT_WIDTH:
-                    self.__finished__ = True
 
+                if i == len(self.SCROLL_TEXT) - 1:
+                    self.last_letter_x = x                
+                    if x <= -pyxel.FONT_WIDTH:
+                        self.__finished__ = True
 
 class App:
     def __init__(self):
