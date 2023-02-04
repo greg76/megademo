@@ -10,12 +10,15 @@ def EaseIn(duration, current):
         return pyxel.sin(deg) + 1
 
 class DemoPart:
-    def __init__(self):
+    def __init__(self, duration=None):
         self.tick = 0
+        self.duration = duration
         self.__finished__ = False
 
     def update(self):
         self.tick += 1
+        if self.duration and self.tick >= self.duration:
+            self.__finished__ = True
 
     def draw(self):
         pass
@@ -45,9 +48,6 @@ class C64loader(DemoPart):
             "READY.\nLOAD\"MEGADEMO\"\n\nSEARCHING FOR MEGADEMO\nLOADING\nREADY.\nRUN",
             pyxel.COLOR_LIGHT_BLUE)
 
-        if self.tick >= 30 * 4:
-            self.__finished__ = True
-
 class RasterBar(DemoPart):
 
     TEXT = 'This is dedicated to\nCsico "raster bar" Laszlo'
@@ -65,7 +65,15 @@ class RasterBar(DemoPart):
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
 
-        bar_height = 7 * pyxel.height / 8 * EaseIn(self.EASE_DURATION, self.tick)
+        if self.tick < self.duration - self.EASE_DURATION:
+            bar_height = 7 * pyxel.height / 8 * EaseIn(self.EASE_DURATION, self.tick)
+            text_x = pyxel.width * EaseIn(self.EASE_DURATION, self.tick) + 1 - pyxel.width
+        else:
+            countdown = self.duration - self.tick
+            bar_height = 7 * pyxel.height / 8 * EaseIn(self.EASE_DURATION, countdown)
+            text_x = pyxel.width * EaseIn(self.EASE_DURATION, countdown) + 1 - pyxel.width
+
+        
         bar_start = pyxel.height - int(bar_height)
 
         for y in range(bar_start, pyxel.height):
@@ -76,8 +84,8 @@ class RasterBar(DemoPart):
                     x += pyxel.sin(self.tick * 6 + 130 + y * 3) * 20
                     pyxel.line(x+i+w, y, x+i+w, pyxel.height, streak[0])
 
-        text_x = pyxel.width * EaseIn(self.EASE_DURATION, self.tick) + 1 - pyxel.width
         pyxel.text(text_x, 1, self.TEXT, pyxel.COLOR_RED)
+
 
 class GuruMeditation(DemoPart):
     GURU_TEXT = ("Error. Press left mouse button", "GURU Meditation 2023.01")
@@ -126,14 +134,62 @@ class GuruMeditation(DemoPart):
                     if x <= -pyxel.FONT_WIDTH:
                         self.__finished__ = True
 
+class Interference(DemoPart):
+    GAP_SIZE = 4
+    PART_DURATION = 200
+    EASE_DURATION = 15
+    SHADES = (
+        pyxel.COLOR_NAVY,
+        pyxel.COLOR_PURPLE,
+        pyxel.COLOR_BROWN,
+        pyxel.COLOR_ORANGE,
+        pyxel.COLOR_YELLOW,
+        pyxel.COLOR_WHITE
+    )
+
+    def __init__(self):
+        self.CIRCLES = pyxel.width // self.GAP_SIZE
+        self.AMPLITUDE = pyxel.width // 6
+        return super().__init__()
+
+    def draw(self):
+        pyxel.cls(pyxel.COLOR_BLACK)
+
+        if self.tick < self.EASE_DURATION:
+            shade = len(self.SHADES) * self.tick // self.EASE_DURATION
+            color = self.SHADES[shade]
+        elif self.duration and self.tick > self.duration - self.EASE_DURATION:
+            countdown = self.duration - self.tick if self.tick <= self.duration else 0
+            shade = len(self.SHADES) * countdown // self.EASE_DURATION
+            color = self.SHADES[shade]
+        else:
+            color = pyxel.COLOR_WHITE
+
+        centers = [
+            (
+                pyxel.width//2  + self.AMPLITUDE * pyxel.sin(self.tick * 3 * (i + 1) ),
+                pyxel.height//2 - self.AMPLITUDE * pyxel.cos(self.tick * 2 * (i + 1) )
+            )
+            for i in range(2)
+        ]
+
+        for x,y in centers:
+            for i in range(self.CIRCLES):
+                pyxel.circb(x, y, i* self.GAP_SIZE, color)
+
+        if self.tick >= self.PART_DURATION:
+            self.__finished__ = False
+        
+
 class App:
     def __init__(self):
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
-            C64loader(),
+            C64loader(120),
             GuruMeditation(),
-            RasterBar(),
+            RasterBar(240),
+            Interference(),
         ]
 
         self.active_part = self.demo_parts.pop(0)
