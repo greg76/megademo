@@ -66,11 +66,11 @@ class RasterBar(DemoPart):
         pyxel.cls(pyxel.COLOR_BLACK)
 
         if self.tick < self.duration - self.EASE_DURATION:
-            bar_height = 7 * pyxel.height / 8 * EaseIn(self.EASE_DURATION, self.tick)
+            bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tick)
             text_x = pyxel.width * EaseIn(self.EASE_DURATION, self.tick) + 1 - pyxel.width
         else:
             countdown = self.duration - self.tick
-            bar_height = 7 * pyxel.height / 8 * EaseIn(self.EASE_DURATION, countdown)
+            bar_height = pyxel.height * EaseIn(self.EASE_DURATION, countdown)
             text_x = pyxel.width * EaseIn(self.EASE_DURATION, countdown) + 1 - pyxel.width
 
         
@@ -181,11 +181,47 @@ class Interference(DemoPart):
             self.__finished__ = False
         
 
+class MandelBrot(DemoPart):
+    def __init__(self):
+        max_iteration = 1000
+        x_center = -1.0
+        y_center =  0.0
+        size = 128
+
+        self.data = []
+        for i in range(size):
+            row = []
+            for j in range(size):
+                x = x_center + 4.0*float(i-size/2)/size
+                y = y_center + 4.0*float(j-size/2)/size
+
+                a,b = (0.0, 0.0)
+                iteration = 0
+
+                while (a**2 + b**2 <= 4.0 and iteration < max_iteration):
+                    a,b = a**2 - b**2 + x, 2*a*b + y
+                    iteration += 1
+                if iteration == max_iteration:
+                    value = 255
+                else:
+                    value = iteration*10 % 256
+
+                row.append(value)
+            self.data.append(row)
+
+        super().__init__()
+
+    def draw(self):
+        for x, column in enumerate(self.data):
+            for y, value in enumerate(column):
+                pyxel.pset(x,y, value // 16)
+
 class App:
     def __init__(self):
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
+            #MandelBrot(),
             C64loader(120),
             GuruMeditation(),
             RasterBar(240),
