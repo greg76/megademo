@@ -13,12 +13,19 @@ class DemoPart:
     def __init__(self, duration=None):
         self.tick = 0
         self.duration = duration
+        self.tock = None
         self.__finished__ = False
 
     def update(self):
         self.tick += 1
-        if self.duration and self.tick >= self.duration:
-            self.__finished__ = True
+
+        # if there's a duration set for the part, we will also have a countdown version of the tick
+        if self.duration:
+            self.tock = self.duration - self.tick if self.tick <= self.duration else 0
+
+            # the status will be set finished if the duration is met
+            if self.tick >= self.duration:
+                self.__finished__ = True
 
     def draw(self):
         pass
@@ -69,9 +76,8 @@ class RasterBar(DemoPart):
             bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tick)
             text_x = pyxel.width * EaseIn(self.EASE_DURATION, self.tick) + 1 - pyxel.width
         else:
-            countdown = self.duration - self.tick
-            bar_height = pyxel.height * EaseIn(self.EASE_DURATION, countdown)
-            text_x = pyxel.width * EaseIn(self.EASE_DURATION, countdown) + 1 - pyxel.width
+            bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tock)
+            text_x = pyxel.width * EaseIn(self.EASE_DURATION, self.tock) + 1 - pyxel.width
 
         
         bar_start = pyxel.height - int(bar_height)
@@ -147,10 +153,10 @@ class Interference(DemoPart):
         pyxel.COLOR_WHITE
     )
 
-    def __init__(self):
+    def __init__(self, duration=None):
         self.CIRCLES = pyxel.width // self.GAP_SIZE
         self.AMPLITUDE = pyxel.width // 6
-        return super().__init__()
+        return super().__init__(duration)
 
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
@@ -158,9 +164,8 @@ class Interference(DemoPart):
         if self.tick < self.EASE_DURATION:
             shade = len(self.SHADES) * self.tick // self.EASE_DURATION
             color = self.SHADES[shade]
-        elif self.duration and self.tick > self.duration - self.EASE_DURATION:
-            countdown = self.duration - self.tick if self.tick <= self.duration else 0
-            shade = len(self.SHADES) * countdown // self.EASE_DURATION
+        elif self.duration and self.tock < self.EASE_DURATION:
+            shade = len(self.SHADES) * self.tock // self.EASE_DURATION
             color = self.SHADES[shade]
         else:
             color = pyxel.COLOR_WHITE
@@ -176,9 +181,6 @@ class Interference(DemoPart):
         for x,y in centers:
             for i in range(self.CIRCLES):
                 pyxel.circb(x, y, i* self.GAP_SIZE, color)
-
-        if self.tick >= self.PART_DURATION:
-            self.__finished__ = False
         
 
 class MandelBrot(DemoPart):
@@ -216,6 +218,50 @@ class MandelBrot(DemoPart):
             for y, value in enumerate(column):
                 pyxel.pset(x,y, value // 16)
 
+class Bouncy(DemoPart):
+    PLATES = 16
+    WAVE_LENGTH = 4
+    SPEED = -6
+    COLOR_SHADES = (
+        (pyxel.COLOR_NAVY, pyxel.COLOR_DARK_BLUE, pyxel.COLOR_CYAN),
+        (pyxel.COLOR_BROWN, pyxel.COLOR_ORANGE, pyxel.COLOR_YELLOW)
+    )
+    EASE_DURATION = 60
+
+    def draw(self):
+        pyxel.cls(pyxel.COLOR_BLACK)
+        
+        for i in range(self.PLATES):
+            for j in range(self.PLATES):
+                # distance of the current point from the center
+                d = abs( (i - self.PLATES / 2)**2 + (j - self.PLATES / 2)**2 )
+                # height/size of the plate is dependent on time and distance from center: we are sending waves from the middle
+                h = pyxel.sin( d * self.WAVE_LENGTH + self.tick * self.SPEED)
+                # normalise h, so 0 <= h <= 1
+                h = (h + 1) / 2
+                # gradually elevate up/down during phase in/out
+                if self.tick < self.EASE_DURATION:
+                    tmp = h - 1 + EaseIn(self.EASE_DURATION, self.tick)
+                    h =  tmp if tmp > 0 else 0
+                elif self.duration and self.tock < self.EASE_DURATION:
+                    tmp = h - 1 + EaseIn(self.EASE_DURATION, self.tock)
+                    h =  tmp if tmp > 0 else 0
+
+                # distance between tiles
+                spacing = pyxel.width / self.PLATES
+                # width of a given tile
+                w = int(spacing * h)
+                # color is picked as if were a chess board
+                color = self.COLOR_SHADES[(i + j) % 2]
+                # shade is dependent on the height/size of the tile
+                idx = int(len(color)*h)
+                capped_idx =  idx if idx < len(color) else len(color)-1
+                shade = color[capped_idx]
+                # need to center the tiles that change size
+                x = int( (i + 0.5) * spacing - w / 2 )
+                y = int( (j + 0.5) * spacing - w / 2 )
+                pyxel.rect(x, y, w, w, shade)
+        
 class App:
     def __init__(self):
         pyxel.init(128, 128, title="megademo", display_scale=4)
@@ -225,7 +271,8 @@ class App:
             C64loader(120),
             GuruMeditation(),
             RasterBar(240),
-            Interference(),
+            Interference(240),
+            Bouncy(),
         ]
 
         self.active_part = self.demo_parts.pop(0)
