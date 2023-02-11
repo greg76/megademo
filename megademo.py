@@ -1,5 +1,6 @@
 import pyxel
 
+# linear interpolation hurts my eyes, so here we go
 def EaseIn(duration, current):
     if current <=0:
         return 0
@@ -10,6 +11,11 @@ def EaseIn(duration, current):
         return pyxel.sin(deg) + 1
 
 class DemoPart:
+    TITLE_TEXT = None
+    TITLE_COLOR = pyxel.COLOR_RED
+    TITLE_SHADOW = pyxel.COLOR_NAVY
+    TITLE_EASE = 15
+
     def __init__(self, duration=None):
         self.tick = 0
         self.duration = duration
@@ -28,7 +34,24 @@ class DemoPart:
                 self.__finished__ = True
 
     def draw(self):
-        pass
+
+        # if theres a TITLE defined, let's ease it in-and-out
+        if self.TITLE_TEXT:
+            lines = self.TITLE_TEXT.split("\n")
+            maxlen = max(len(line) for line in lines) * pyxel.FONT_WIDTH
+            for i, line in enumerate(lines):
+                w = len(line) * pyxel.FONT_WIDTH
+                x = pyxel.width - w - 1 
+                if self.tick <= self.TITLE_EASE:
+                    x += maxlen * EaseIn(self.TITLE_EASE, self.TITLE_EASE - self.tick)
+                elif self.duration and self.tock < self.TITLE_EASE:
+                    x += maxlen * EaseIn(self.TITLE_EASE, self.TITLE_EASE - self.tock)
+                y = i * pyxel.FONT_HEIGHT
+                # put a thick shadow first, to ensure readability over any crazy background
+                pyxel.text(x + 1, y + 1, line, self.TITLE_SHADOW)
+                pyxel.text(x + 1, y + 0, line, self.TITLE_SHADOW)
+                pyxel.text(x + 0, y + 1, line, self.TITLE_SHADOW)
+                pyxel.text(x, y, line, self.TITLE_COLOR)
 
     def is_finished(self):
         return self.__finished__
@@ -57,7 +80,7 @@ class C64loader(DemoPart):
 
 class RasterBar(DemoPart):
 
-    TEXT = 'This is dedicated to\nCsico "raster bar" Laszlo'
+    TITLE_TEXT = 'This is dedicated to\nCsico "raster bar" Laszlo'
     EASE_DURATION = 60
 
     # colors and width of lines that a single bar is composed of
@@ -74,11 +97,8 @@ class RasterBar(DemoPart):
 
         if self.tick < self.duration - self.EASE_DURATION:
             bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tick)
-            text_x = pyxel.width * EaseIn(self.EASE_DURATION, self.tick) + 1 - pyxel.width
         else:
             bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tock)
-            text_x = pyxel.width * EaseIn(self.EASE_DURATION, self.tock) + 1 - pyxel.width
-
         
         bar_start = pyxel.height - int(bar_height)
 
@@ -90,7 +110,7 @@ class RasterBar(DemoPart):
                     x += pyxel.sin(self.tick * 6 + 130 + y * 3) * 20
                     pyxel.line(x+i+w, y, x+i+w, pyxel.height, streak[0])
 
-        pyxel.text(text_x, 1, self.TEXT, pyxel.COLOR_RED)
+        super().draw()
 
 
 class GuruMeditation(DemoPart):
@@ -141,6 +161,9 @@ class GuruMeditation(DemoPart):
                         self.__finished__ = True
 
 class Interference(DemoPart):
+    TITLE_TEXT = "Waves clash and intersect,\n" \
+                 "Interference patterns form,\n" \
+                 "Chaos in motion."
     GAP_SIZE = 4
     PART_DURATION = 200
     EASE_DURATION = 15
@@ -181,6 +204,8 @@ class Interference(DemoPart):
         for x,y in centers:
             for i in range(self.CIRCLES):
                 pyxel.circb(x, y, i* self.GAP_SIZE, color)
+
+        super().draw()
         
 
 class MandelBrot(DemoPart):
@@ -218,6 +243,8 @@ class MandelBrot(DemoPart):
             for y, value in enumerate(column):
                 pyxel.pset(x,y, value // 16)
 
+        super().draw()
+
 class Bouncy(DemoPart):
     PLATES = 16
     WAVE_LENGTH = 4
@@ -227,6 +254,7 @@ class Bouncy(DemoPart):
         (pyxel.COLOR_BROWN, pyxel.COLOR_ORANGE, pyxel.COLOR_YELLOW)
     )
     EASE_DURATION = 60
+    TITLE_TEXT = "demoscene =\nsin() + cos()"
 
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
@@ -261,6 +289,8 @@ class Bouncy(DemoPart):
                 x = int( (i + 0.5) * spacing - w / 2 )
                 y = int( (j + 0.5) * spacing - w / 2 )
                 pyxel.rect(x, y, w, w, shade)
+
+        super().draw()
         
 class App:
     def __init__(self):
