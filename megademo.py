@@ -119,10 +119,59 @@ class GuruMeditation(DemoPart):
     DYCP_HEIGHT = 20
     SCROLL_DELAY = 90
     EASE_OUT_DURATION = 20
-    last_letter_x = None
+    STAR_SHADES = (pyxel.COLOR_NAVY, pyxel.COLOR_DARK_BLUE, pyxel.COLOR_LIGHT_BLUE)
+    NO_OF_STARS = 100
+
+    def __init__(self, duration=None):
+        self.last_letter_x = None
+        self.stars = list(
+            (
+                pyxel.rndi(0, pyxel.width - 1),
+                pyxel.rndi(0, pyxel.height - 1),
+                pyxel.rndi(1, len(self.STAR_SHADES))
+            )
+            for _ in range(self.NO_OF_STARS)
+        )
+        super().__init__(duration)
 
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
+
+        if self.tick > self.SCROLL_DELAY:
+            for i, star in enumerate(self.stars):
+                x, y, v = star
+
+                if self.tick - self.SCROLL_DELAY < self.EASE_OUT_DURATION:
+                    c = int((v - 1) * EaseIn(self.EASE_OUT_DURATION, self.tick - self.SCROLL_DELAY))
+                else:
+                    c = self.STAR_SHADES[v - 1]
+                pyxel.pset(x, y, c)
+                if x >= v:
+                    x -= v
+                    self.stars[i] = (x, y, v)
+                elif self.last_letter_x is None or self.last_letter_x > pyxel.width:
+                    x += pyxel.width
+                    y = pyxel.rndi(0, pyxel.height - 1)
+                    v = pyxel.rndi(1, len(self.STAR_SHADES))
+                    self.stars[i] = (x, y, v)
+                else:
+                    del(self.stars[i])
+
+            for i, letter in enumerate(self.SCROLL_TEXT):
+                x = pyxel.width - self.tick + self.SCROLL_DELAY + i * pyxel.FONT_WIDTH
+
+                # only draw the letter if any part of it is in the visible area
+                if -pyxel.FONT_WIDTH < x < pyxel.width:
+                    rot = (self.tick - i * 2) * 5
+                    y = pyxel.height // 2 + self.DYCP_HEIGHT * pyxel.sin(rot)
+                    # the first 2 color are fairly dark, let's use only rest of the 16 color palette
+                    color = (self.tick + i) % 14 + 2
+                    pyxel.text(x, y, letter, color)
+
+                if i == len(self.SCROLL_TEXT) - 1:
+                    self.last_letter_x = x                
+                    if x <= -pyxel.FONT_WIDTH:
+                        self.__finished__ = True
 
         if self.last_letter_x is not None and self.last_letter_x <= self.EASE_OUT_DURATION:
             current_delta = self.EASE_OUT_DURATION - self.last_letter_x
@@ -143,22 +192,6 @@ class GuruMeditation(DemoPart):
                 pyxel.COLOR_RED
             )
 
-        if self.tick > self.SCROLL_DELAY:
-            for i, letter in enumerate(self.SCROLL_TEXT):
-                x = pyxel.width - self.tick + self.SCROLL_DELAY + i * pyxel.FONT_WIDTH
-
-                # only draw the letter if any part of it is in the visible area
-                if -pyxel.FONT_WIDTH < x < pyxel.width:
-                    rot = (self.tick - i * 2) * 5
-                    y = pyxel.height // 2 + self.DYCP_HEIGHT * pyxel.sin(rot)
-                    # the first 2 color are fairly dark, let's use only rest of the 16 color palette
-                    color = (self.tick + i) % 14 + 2
-                    pyxel.text(x, y, letter, color)
-
-                if i == len(self.SCROLL_TEXT) - 1:
-                    self.last_letter_x = x                
-                    if x <= -pyxel.FONT_WIDTH:
-                        self.__finished__ = True
 
 class Interference(DemoPart):
     TITLE_TEXT = "Waves clash and intersect,\n" \
@@ -211,7 +244,7 @@ class Interference(DemoPart):
 class MandelBrot(DemoPart):
     def __init__(self):
         max_iteration = 1000
-        x_center = -1.0
+        x_center =  -0.65
         y_center =  0.0
         size = 128
 
@@ -219,8 +252,8 @@ class MandelBrot(DemoPart):
         for i in range(size):
             row = []
             for j in range(size):
-                x = x_center + 4.0*float(i-size/2)/size
-                y = y_center + 4.0*float(j-size/2)/size
+                x = x_center + 2.8*float(i-size/2)/size
+                y = y_center + 2.8*float(j-size/2)/size
 
                 a,b = (0.0, 0.0)
                 iteration = 0
@@ -241,7 +274,10 @@ class MandelBrot(DemoPart):
     def draw(self):
         for x, column in enumerate(self.data):
             for y, value in enumerate(column):
-                pyxel.pset(x,y, value // 16)
+                h = value
+                c = value // 16
+                #pyxel.line(x, pyxel.height - h // 2 - y // 2, x, pyxel.height, c)
+                pyxel.pset(x, y, c)
 
         super().draw()
 
