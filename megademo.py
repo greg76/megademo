@@ -10,10 +10,19 @@ def EaseIn(duration, current):
         deg = 270 + 90 * current / duration
         return pyxel.sin(deg) + 1
 
+def EaseOut(duration, current):
+    if current <=0:
+        return 0
+    elif current >= duration:
+        return 1
+    else:
+        deg = 90 * current / duration
+        return pyxel.sin(deg)
+
 class DemoPart:
     TITLE_TEXT = None
     TITLE_COLOR = pyxel.COLOR_RED
-    TITLE_SHADOW = pyxel.COLOR_NAVY
+    TITLE_SHADOW = pyxel.COLOR_BLACK
     TITLE_EASE = 15
 
     def __init__(self, duration=None):
@@ -242,18 +251,30 @@ class Interference(DemoPart):
         
 
 class MandelBrot(DemoPart):
-    def __init__(self):
+    EASE_DURATION = 20
+    SIZE = 128
+    SHADES = (
+        (32,  pyxel.COLOR_NAVY),
+        (96, pyxel.COLOR_BROWN),
+        (236, pyxel.COLOR_GREEN),
+        (256,pyxel.COLOR_LIME),
+    )
+    TITLE_TEXT = "I have to confess\n" \
+                 "Always faked the voxel hills\n" \
+                 "This time it's for real"
+
+    def __init__(self, duration = None):
+        # parameters for centering and precision of the mandelbrot
         max_iteration = 1000
         x_center =  -0.65
         y_center =  0.0
-        size = 128
 
-        self.data = []
-        for i in range(size):
-            row = []
-            for j in range(size):
-                x = x_center + 2.8*float(i-size/2)/size
-                y = y_center + 2.8*float(j-size/2)/size
+        # pre-calc the mandelbrot
+        self.reference_data = []
+        for i in range(self.SIZE):
+            for j in range(self.SIZE):
+                x = x_center + 2.8*float(i-self.SIZE/2)/self.SIZE
+                y = y_center + 2.8*float(j-self.SIZE/2)/self.SIZE
 
                 a,b = (0.0, 0.0)
                 iteration = 0
@@ -266,18 +287,42 @@ class MandelBrot(DemoPart):
                 else:
                     value = iteration*10 % 256
 
-                row.append(value)
-            self.data.append(row)
+                self.reference_data.append((i, j, value))
 
-        super().__init__()
+        self.rotated_data = self.reference_data
+
+        super().__init__(duration)
+
+    def update(self):
+
+        # create rotated copy of the mandelbrot set
+        self.rotated_data = [
+        (
+            pyxel.cos(self.tick) * (x - self.SIZE // 2) - pyxel.sin(self.tick) * (y - self.SIZE // 2) + self.SIZE // 2,
+            pyxel.sin(self.tick) * (x - self.SIZE // 2) + pyxel.cos(self.tick) * (y - self.SIZE // 2) + self.SIZE // 2,
+            v
+        )
+        for x, y, v in self.reference_data    
+        ]
+
+        return super().update()
 
     def draw(self):
-        for x, column in enumerate(self.data):
-            for y, value in enumerate(column):
-                h = value
-                c = value // 16
-                #pyxel.line(x, pyxel.height - h // 2 - y // 2, x, pyxel.height, c)
-                pyxel.pset(x, y, c)
+        pyxel.cls(pyxel.COLOR_BLACK)
+
+        # ease in-out displacement
+        if self.tick < self.EASE_DURATION:
+            d = pyxel.height * (1 - EaseIn(self.EASE_DURATION, self.tick))
+        elif self.duration and self.tock < self.EASE_DURATION:
+            d = pyxel.height * (1 - EaseOut(self.EASE_DURATION, self.tock))
+        else:
+            d = 0
+
+        # render voxel columns for each rotated point
+        for x, y, value in sorted(self.rotated_data, key=lambda p: p[1]*500 + p[0], reverse=True):
+            h = value // 4 + (y + d) // 2
+            c = next(color for threshold, color in self.SHADES if threshold > value)
+            pyxel.line(x, pyxel.height - h + d * 2, x, pyxel.height, c)
 
         super().draw()
 
@@ -333,12 +378,12 @@ class App:
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
-            #MandelBrot(),
             C64loader(120),
             GuruMeditation(),
             RasterBar(240),
             Interference(240),
-            Bouncy(),
+            Bouncy(240),
+            MandelBrot(),
         ]
 
         self.active_part = self.demo_parts.pop(0)
