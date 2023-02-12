@@ -381,7 +381,6 @@ class App:
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
-            MandelBrot(),
             C64loader(120),
             GuruMeditation(),
             RasterBar(240),
