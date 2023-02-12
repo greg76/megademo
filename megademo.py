@@ -252,15 +252,16 @@ class Interference(DemoPart):
 
 class MandelBrot(DemoPart):
     EASE_DURATION = 20
-    SIZE = 128
+    SIZE = 64
     SHADES = (
         (32,  pyxel.COLOR_NAVY),
-        (96, pyxel.COLOR_BROWN),
-        (236, pyxel.COLOR_GREEN),
-        (256,pyxel.COLOR_LIME),
+        (48,  pyxel.COLOR_PURPLE),
+        (96, pyxel.COLOR_RED),
+        (255, pyxel.COLOR_ORANGE),
+        (256, pyxel.COLOR_YELLOW),
     )
     TITLE_TEXT = "I have to confess\n" \
-                 "Always faked the voxel hills\n" \
+                 "Always faked voxel landscapes\n" \
                  "This time it's for real"
 
     def __init__(self, duration = None):
@@ -323,9 +324,13 @@ class MandelBrot(DemoPart):
 
         # render voxel columns for each rotated point
         for x, y, value in sorted(self.rotated_data, key=lambda p: p[1]*500 + p[0], reverse=True):
+            x *= 128 / self.SIZE
+            y *= 128 / self.SIZE
             h = value // 4 + (y + d) // 2
-            c = next(color for threshold, color in self.SHADES if threshold > value)
-            pyxel.line(x, pyxel.height - h + d * 2, x, pyxel.height, c)
+            i, c = next((i, shade[1]) for i, shade in enumerate(self.SHADES) if shade[0] > value)
+            highlight = self.SHADES[i + 1][1] if i < len(self.SHADES) - 1 else pyxel.COLOR_WHITE 
+            pyxel.rect(x, pyxel.height - h + d * 2, 2,  h + d * 2, c)
+            pyxel.rect(x, pyxel.height - h + d * 2, 2, 2, highlight)
 
         super().draw()
 
@@ -381,6 +386,7 @@ class App:
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
+            MandelBrot(),
             C64loader(120),
             GuruMeditation(),
             RasterBar(240),
