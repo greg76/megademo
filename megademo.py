@@ -295,11 +295,14 @@ class MandelBrot(DemoPart):
 
     def update(self):
 
+        # adjust rotation speed so at 30fps it completes in 10s
+        rot = self.tick * 360 / 300
+
         # create rotated copy of the mandelbrot set
         self.rotated_data = [
         (
-            pyxel.cos(self.tick) * (x - self.SIZE // 2) - pyxel.sin(self.tick) * (y - self.SIZE // 2) + self.SIZE // 2,
-            pyxel.sin(self.tick) * (x - self.SIZE // 2) + pyxel.cos(self.tick) * (y - self.SIZE // 2) + self.SIZE // 2,
+            pyxel.cos(rot) * (x - self.SIZE // 2) - pyxel.sin(rot) * (y - self.SIZE // 2) + self.SIZE // 2,
+            pyxel.sin(rot) * (x - self.SIZE // 2) + pyxel.cos(rot) * (y - self.SIZE // 2) + self.SIZE // 2,
             v
         )
         for x, y, v in self.reference_data    
@@ -378,6 +381,7 @@ class App:
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
+            MandelBrot(),
             C64loader(120),
             GuruMeditation(),
             RasterBar(240),
