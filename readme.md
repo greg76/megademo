@@ -1,6 +1,6 @@
 # megademo
 
-A pastime project for recreating some of the demo effects from my childhood that I enjoyed tinkering with. This time instead of going full berzerk on CPU cycle tight optimisation in 6510/6502 and x86 assembly I went for [pyxel](https://github.com/kitao/pyxel) (a super nice and easy to approach retro game engine for Python) because I got lazy :) and it just allows me to quickly capture a bit of nostalgy in between times.
+A pastime project for recreating some of the demo effects from my childhood that I enjoyed tinkering with. This time instead of going full berzerk on CPU cycle tight optimisation in 6510/6502 and x86 assembly I went for [pyxel](https://github.com/kitao/pyxel) (a super nice and easy to approach retro game engine for Python) because I got lazy :) and it just allows me to quickly capture a bit of nostalgy in between times. You can check out the current version of this little experiment of mine [running in your browser](https://kitao.github.io/pyxel/wasm/launcher/?run=greg76.megademo.megademo)! :wink:
 
 ![C64 loader](images/c64loader.png)
 ![mandelbrot voxel](images/mandelbrot.gif)

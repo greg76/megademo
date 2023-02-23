@@ -251,7 +251,7 @@ class Interference(DemoPart):
         
 
 class MandelBrot(DemoPart):
-    EASE_DURATION = 20
+    EASE_DURATION = 60
     SIZE = 64
     SHADES = (
         (32,  pyxel.COLOR_NAVY),
@@ -381,6 +381,96 @@ class Bouncy(DemoPart):
 
         super().draw()
         
+class AmigaBall(DemoPart):
+    # basics of rotating a point around 3 axis https://en.wikipedia.org/wiki/Rotation_matrix
+    class Object3D():
+        VERTICES_ORIG = (
+            (0, 0, -10),
+            (-10, -10, 0),
+            (-10, 10, 0),
+            (10, 10, 0),
+            (10, -10, 0),
+            (0, 0, 10)
+        )
+        FACES = (
+            (0, 1, 2),
+            (0, 2, 3),
+            (0, 3, 4),
+            (0, 4, 1),
+            (1, 2, 5),
+            (2, 3, 5),
+            (3, 4, 5),
+            (4, 1, 5)
+        )
+        ANGLES = (0, 0, 0)
+    def __init__(self, duration=None):
+        self.obj = self.Object3D()
+        super().__init__(duration)
+    def update(self):
+        self.obj.ANGLES[3] = self.tick 
+        return super().update()
+
+class ShadeBobs(DemoPart):
+    SHADES = (pyxel.COLOR_BLACK, pyxel.COLOR_NAVY, pyxel.COLOR_PURPLE, pyxel.COLOR_RED, pyxel.COLOR_ORANGE, pyxel.COLOR_YELLOW)
+    MASK = (
+        (0,0,0,1,1,1,0,0,0),
+        (0,0,1,1,1,1,1,0,0),
+        (0,1,1,1,1,1,1,1,0),
+        (1,1,1,1,1,1,1,1,1),
+        (1,1,1,1,1,1,1,1,1),
+        (1,1,1,1,1,1,1,1,1),
+        (0,1,1,1,1,1,1,1,0),
+        (0,0,1,1,1,1,1,0,0),
+        (0,0,0,1,1,1,0,0,0),
+    )
+    MASK_HEIGHT = len(MASK)
+    MASK_WIDTH = len(MASK[0])
+    NO_OF_BLOBS = 2
+    TITLE_TEXT = "2xSin ShadeBobs,\nA Mesmerizing Effect,\nSimple Joys In Life."
+    EASE_DURATION = 30
+
+    def __init__(self, duration=None):
+        pyxel.cls(pyxel.COLOR_BLACK)
+        self.AMPLITUDE = pyxel.width // 5
+        super().__init__(duration)
+
+    def draw(self):
+        coords = [
+            (
+                pyxel.width//2  + self.AMPLITUDE * pyxel.sin(self.tick * 4 * (i + 1) ) + self.AMPLITUDE * pyxel.cos(self.tick * 5 * (i + 2) ),
+                pyxel.height//2 - self.AMPLITUDE * pyxel.cos(self.tick * 7 * (i + 2) ) + self.AMPLITUDE * (pyxel.sin(self.tick * 3 * (i + 1)) + 0.25 )
+            )
+            for i in range(self.NO_OF_BLOBS)
+        ]
+
+        # if we have multiple "bobs" we repeat the effect multiple times
+        for x, y in coords:
+            # per each bob, you will process the shading line by line
+            for i, row in enumerate(self.MASK):
+                # and you need to read and modify the color pixel-by-pixel
+                for j, value in enumerate(row):
+                    # calculate pixel coordinates
+                    px = x + j - self.MASK_WIDTH // 2
+                    py = y + i - self.MASK_HEIGHT // 2
+                    # read current color
+                    color = pyxel.pget(px, py)
+                    # adjust shade based on the look-up table 
+                    index = self.SHADES.index(color)
+                    # if already reached lightest shade, cycle back to a dark one
+                    index = index + value if index + value < len(self.SHADES) else 1
+                    pyxel.pset(px, py, self.SHADES[index])
+
+        # ease out is just iteratively clipping the image both from above and below
+        if self.duration and self.tock < self.EASE_DURATION:
+            h = pyxel.height * (1 - EaseOut(self.EASE_DURATION, self.tock)) / 2 - self.AMPLITUDE * 0.25
+            pyxel.rect(0, self.AMPLITUDE * 0.25, pyxel.width, h, pyxel.COLOR_BLACK)
+            pyxel.rect(0, pyxel.height - h + self.AMPLITUDE * 0.25, pyxel.width, pyxel.height, pyxel.COLOR_BLACK)
+
+        # we need to keep the background for the text animation, if otherwise not cleaning the whole screan for each frame
+        pyxel.rect(0,0,pyxel.width, pyxel.FONT_HEIGHT * 3 + 1, pyxel.COLOR_BLACK)
+        # text animation is handled by parent class
+        super().draw()
+
 class App:
     def __init__(self):
         pyxel.init(128, 128, title="megademo", display_scale=4)
@@ -388,6 +478,7 @@ class App:
         self.demo_parts = [
             C64loader(120),
             GuruMeditation(),
+            ShadeBobs(240),
             RasterBar(240),
             Interference(240),
             Bouncy(240),
