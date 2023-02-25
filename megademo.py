@@ -296,8 +296,7 @@ class MandelBrot(DemoPart):
 
     def update(self):
 
-        # adjust rotation speed so at 30fps it completes in 10s
-        rot = self.tick * 360 / 300
+        rot = self.tick % 360
 
         # create rotated copy of the mandelbrot set
         self.rotated_data = [
@@ -430,15 +429,15 @@ class ShadeBobs(DemoPart):
     EASE_DURATION = 30
 
     def __init__(self, duration=None):
-        pyxel.cls(pyxel.COLOR_BLACK)
+        pyxel.image(0).cls(pyxel.COLOR_BLACK)
         self.AMPLITUDE = pyxel.width // 5
         super().__init__(duration)
 
     def draw(self):
         coords = [
             (
-                pyxel.width//2  + self.AMPLITUDE * pyxel.sin(self.tick * 4 * (i + 1) ) + self.AMPLITUDE * pyxel.cos(self.tick * 5 * (i + 2) ),
-                pyxel.height//2 - self.AMPLITUDE * pyxel.cos(self.tick * 7 * (i + 2) ) + self.AMPLITUDE * (pyxel.sin(self.tick * 3 * (i + 1)) + 0.25 )
+                pyxel.width//2  + self.AMPLITUDE * pyxel.sin(self.tick * 4 * (i + 1)) + self.AMPLITUDE * pyxel.cos(self.tick * 5 * (i + 2)),
+                pyxel.height//2 - self.AMPLITUDE * pyxel.cos(self.tick * 7 * (i + 2)) + self.AMPLITUDE * pyxel.sin(self.tick * 3 * (i + 1))
             )
             for i in range(self.NO_OF_BLOBS)
         ]
@@ -458,16 +457,15 @@ class ShadeBobs(DemoPart):
                     index = self.SHADES.index(color)
                     # if already reached lightest shade, cycle back to a dark one
                     index = index + value if index + value < len(self.SHADES) else 1
-                    pyxel.pset(px, py, self.SHADES[index])
+                    # we draw the shadebob in the image bank, not the frame buffer!
+                    # this way we limit the amount of pixel level read/write operations we manually do
+                    pyxel.image(0).pset(px, py, self.SHADES[index])
 
-        # ease out is just iteratively clipping the image both from above and below
-        if self.duration and self.tock < self.EASE_DURATION:
-            h = pyxel.height * (1 - EaseOut(self.EASE_DURATION, self.tock)) / 2 - self.AMPLITUDE * 0.25
-            pyxel.rect(0, self.AMPLITUDE * 0.25, pyxel.width, h, pyxel.COLOR_BLACK)
-            pyxel.rect(0, pyxel.height - h + self.AMPLITUDE * 0.25, pyxel.width, pyxel.height, pyxel.COLOR_BLACK)
+        # displacement when easying out the background
+        d = pyxel.height * (1 - EaseOut(self.EASE_DURATION, self.tock)) if self.duration and self.tock < self.EASE_DURATION else 0
+        pyxel.cls(pyxel.COLOR_BLACK)
+        pyxel.blt(0,d,0,0,0,pyxel.width,pyxel.height)
 
-        # we need to keep the background for the text animation, if otherwise not cleaning the whole screan for each frame
-        pyxel.rect(0,0,pyxel.width, pyxel.FONT_HEIGHT * 3 + 1, pyxel.COLOR_BLACK)
         # text animation is handled by parent class
         super().draw()
 
