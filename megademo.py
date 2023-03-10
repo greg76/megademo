@@ -381,33 +381,170 @@ class Bouncy(DemoPart):
         super().draw()
         
 class AmigaBall(DemoPart):
-    # basics of rotating a point around 3 axis https://en.wikipedia.org/wiki/Rotation_matrix
+    
+    TITLE_TEXT = "When I first saw an Amiga\nI was tripping balls!"
+
     class Object3D():
-        VERTICES_ORIG = (
-            (0, 0, -10),
-            (-10, -10, 0),
-            (-10, 10, 0),
-            (10, 10, 0),
-            (10, -10, 0),
-            (0, 0, 10)
-        )
-        FACES = (
-            (0, 1, 2),
-            (0, 2, 3),
-            (0, 3, 4),
-            (0, 4, 1),
-            (1, 2, 5),
-            (2, 3, 5),
-            (3, 4, 5),
-            (4, 1, 5)
-        )
-        ANGLES = (0, 0, 0)
+
+        class Face():
+            def __init__(self, edges, color = None) -> None:
+                self.edges = edges
+                self.color = color
+
+        RADIUS = 30
+        LONGITUDES = 16
+        LATITUDES = 7
+        CAMERA_DISTANCE = 100
+
+        def __init__(self):
+            # vertex generation
+            self.VERTICES_ORIG = [(0, -self.RADIUS, 0)]
+            for j in range(self.LATITUDES):
+                lat = (j+1) * 180 / (self.LATITUDES + 1)
+                for i in range(self.LONGITUDES):
+                    degree = i * 360 / self.LONGITUDES
+                    x = self.RADIUS * pyxel.sin(degree) * pyxel.sin(lat)
+                    y = - self.RADIUS * pyxel.cos(lat)
+                    z = self.RADIUS * pyxel.cos(degree) * pyxel.sin(lat)
+                    self.VERTICES_ORIG.append((x, y, z))
+            self.VERTICES_ORIG.append((0, self.RADIUS, 0))
+
+            # face generation
+            self.FACES = []
+            color_idx = 0
+            for i in range(self.LONGITUDES):
+                color = pyxel.COLOR_WHITE if color_idx % 2 else pyxel.COLOR_RED
+                color_idx += 1
+                if i < self.LONGITUDES - 1:
+                    self.FACES.append(
+                        self.Face((0, i+1, i+2), color),
+                    )
+                else:
+                    self.FACES.append(
+                        self.Face((0, i+1, 1), color)
+                    )
+
+            for j in range(self.LATITUDES - 1):
+                color_idx += 1
+                for i in range(self.LONGITUDES):
+                    color = pyxel.COLOR_WHITE if color_idx % 2 else pyxel.COLOR_RED
+                    color_idx += 1
+                    if i < self.LONGITUDES - 1:
+                        a = j * self.LONGITUDES + i + 1
+                        b = j * self.LONGITUDES + i + 2
+                        c = (j+1) * self.LONGITUDES + i + 1
+                        d = (j+1) * self.LONGITUDES + i + 2
+                    else:
+                        a = j * self.LONGITUDES + i + 1
+                        b = j * self.LONGITUDES + 1
+                        c = (j+1) * self.LONGITUDES + i + 1
+                        d = (j+1) * self.LONGITUDES + 1
+                    self.FACES.append(self.Face((c, b, a), color))
+                    self.FACES.append(self.Face((c, d, b), color))                        
+
+            last_vertex = len(self.VERTICES_ORIG) - 1
+
+            for i in range(self.LONGITUDES):
+                color_idx += 1
+                color = pyxel.COLOR_WHITE if color_idx % 2 else pyxel.COLOR_RED
+                if i < self.LONGITUDES - 1:
+                    self.FACES.append(
+                        self.Face((last_vertex, last_vertex - i - 1, last_vertex - i - 2), color),
+                    )
+                else:
+                    self.FACES.append(
+                        self.Face((last_vertex, last_vertex - self.LONGITUDES, last_vertex - 1), color)
+                    )
+
+            self.alpha = 0
+            self.beta = 0
+            self.gamma = 15
+            self.rotate()
+
+        def update(self):
+            self.beta += 360/10/10
+            self.rotate()
+
+        def rotate(self):
+            # setting up rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix
+            rot = [
+                [pyxel.cos(self.beta)*pyxel.cos(self.gamma), pyxel.sin(self.alpha)*pyxel.sin(self.beta)*pyxel.cos(self.gamma)-pyxel.cos(self.alpha)*pyxel.sin(self.gamma), pyxel.cos(self.alpha)*pyxel.sin(self.beta)*pyxel.cos(self.gamma)+pyxel.sin(self.alpha)*pyxel.sin(self.gamma)],
+                [pyxel.cos(self.beta)*pyxel.sin(self.gamma), pyxel.sin(self.alpha)*pyxel.sin(self.beta)*pyxel.sin(self.gamma)+pyxel.cos(self.alpha)*pyxel.cos(self.gamma), pyxel.cos(self.alpha)*pyxel.sin(self.beta)*pyxel.sin(self.gamma)-pyxel.sin(self.alpha)*pyxel.cos(self.gamma)],
+                [-pyxel.sin(self.beta), pyxel.sin(self.alpha)*pyxel.cos(self.beta), pyxel.cos(self.alpha)*pyxel.cos(self.beta)]
+            ]
+            # apply rotation matrix to get the current position of vertices
+            self.vertices = tuple(
+                (
+                    sum([i*j for (i,j) in zip(vertex, rot[0])]),
+                    sum([i*j for (i,j) in zip(vertex, rot[1])]),
+                    sum([i*j for (i,j) in zip(vertex, rot[2])])
+                )
+                for vertex in self.VERTICES_ORIG
+            )
+            # calculate face normals
+            self.normals = tuple(
+                (
+                    # V = P1-P0, W = P2-P0
+                    # Nz = Vx*Wy-Vy*Wx = (p1x-p0x) * (p2y-p0y) - (p1y-p0y) * (p2x-p0x)
+                    (self.vertices[face.edges[1]][0] - self.vertices[face.edges[0]][0]) * (self.vertices[face.edges[2]][1] - self.vertices[face.edges[0]][1]) -
+                    (self.vertices[face.edges[1]][1] - self.vertices[face.edges[0]][1]) * (self.vertices[face.edges[2]][0] - self.vertices[face.edges[0]][0])
+                )
+                for face in self.FACES
+            )
+            
+            # projection of 3d coordinates to 2d display plane https://en.wikipedia.org/wiki/3D_projection
+            self.vertices2d = tuple(
+                (
+                    vertex[0] * self.CAMERA_DISTANCE / (vertex[2] + self.CAMERA_DISTANCE),
+                    vertex[1] * self.CAMERA_DISTANCE / (vertex[2] + self.CAMERA_DISTANCE)
+                )
+                for vertex in self.vertices
+            )
+
     def __init__(self, duration=None):
+        self.BOUNCE_HEIGHT = pyxel.height // 2
+        self.BOUNCE_SPEED = 3 * 360 / 300
         self.obj = self.Object3D()
+        self.dx = -self.obj.RADIUS
+        self.bounce_direction = 1
         super().__init__(duration)
     def update(self):
-        self.obj.ANGLES[3] = self.tick 
+        self.obj.update()
         return super().update()
+    
+    def draw(self):
+        pyxel.cls(pyxel.COLOR_BLACK)
+
+        self.dx += self.bounce_direction
+        if self.dx >= pyxel.width - self.obj.RADIUS:
+            self.bounce_direction = -1
+        if self.bounce_direction == -1 and self.dx < -self.obj.RADIUS:
+            print(self.tick)
+
+        dy = pyxel.height - self.BOUNCE_HEIGHT * abs(pyxel.sin(self.tick * self.BOUNCE_SPEED)) - self.obj.RADIUS
+        for face, normal in zip(self.obj.FACES, self.obj.normals):
+            if normal > 15: # there's something phishy here, should be compared to zero, so the given object face is looking towards the camera
+                if face.color:
+                    pyxel.tri(
+                        self.obj.vertices2d[face.edges[0]][0] + self.dx,
+                        self.obj.vertices2d[face.edges[0]][1] + dy,
+                        self.obj.vertices2d[face.edges[1]][0] + self.dx,
+                        self.obj.vertices2d[face.edges[1]][1] + dy,
+                        self.obj.vertices2d[face.edges[2]][0] + self.dx,
+                        self.obj.vertices2d[face.edges[2]][1] + dy,
+                        face.color
+                    )
+                else:
+                    pyxel.trib(
+                        self.obj.vertices2d[face.edges[0]][0] + dx,
+                        self.obj.vertices2d[face.edges[0]][1] + dy,
+                        self.obj.vertices2d[face.edges[1]][0] + dx,
+                        self.obj.vertices2d[face.edges[1]][1] + dy,
+                        self.obj.vertices2d[face.edges[2]][0] + dx,
+                        self.obj.vertices2d[face.edges[2]][1] + dy,
+                        pyxel.COLOR_GRAY
+                    )
+        return super().draw()
 
 class ShadeBobs(DemoPart):
     SHADES = (pyxel.COLOR_BLACK, pyxel.COLOR_NAVY, pyxel.COLOR_PURPLE, pyxel.COLOR_RED, pyxel.COLOR_ORANGE, pyxel.COLOR_YELLOW)
@@ -480,6 +617,7 @@ class App:
             RasterBar(240),
             Interference(240),
             Bouncy(240),
+            AmigaBall(260),
             MandelBrot(),
         ]
 

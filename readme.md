@@ -4,6 +4,7 @@ A pastime project for recreating some of the demo effects from my childhood that
 
 ![C64 loader](images/c64loader.png)
 ![mandelbrot voxel](images/mandelbrot.gif)
+![amiga ball](images/amigaball.gif)
 
 The term megademo was used to refer to longer then usual demoscene product, that would include an extensive range of effects, so called demo parts. Later demos evolved into a more fluid, story telling like visual experience with a more unified look and stronger visual integrity. Early megademos on the other hand were more like just a series of independent parts, sections, a showcase of graphics routines.
 
