@@ -522,8 +522,12 @@ class AmigaBall(DemoPart):
         self.dx += self.bounce_direction
         if self.dx >= pyxel.width - self.obj.RADIUS:
             self.bounce_direction = -1
+
+        '''
+        # this is for just checking timing, how many frame it take to complete animation
         if self.bounce_direction == -1 and self.dx < -self.obj.RADIUS:
             print(self.tick)
+        '''
 
         dy = pyxel.height - self.BOUNCE_HEIGHT * abs(pyxel.sin(self.tick * self.BOUNCE_SPEED)) - self.obj.RADIUS
 
@@ -540,16 +544,6 @@ class AmigaBall(DemoPart):
                         self.obj.vertices2d[face.edges[2]][0] + self.dx,
                         self.obj.vertices2d[face.edges[2]][1] + dy,
                         face.color
-                    )
-                else:
-                    pyxel.trib(
-                        self.obj.vertices2d[face.edges[0]][0] + dx,
-                        self.obj.vertices2d[face.edges[0]][1] + dy,
-                        self.obj.vertices2d[face.edges[1]][0] + dx,
-                        self.obj.vertices2d[face.edges[1]][1] + dy,
-                        self.obj.vertices2d[face.edges[2]][0] + dx,
-                        self.obj.vertices2d[face.edges[2]][1] + dy,
-                        pyxel.COLOR_GRAY
                     )
         return super().draw()
 
