@@ -206,7 +206,7 @@ class Interference(DemoPart):
     TITLE_TEXT = "Waves clash and intersect,\n" \
                  "Interference patterns form,\n" \
                  "Chaos in motion."
-    GAP_SIZE = 4
+    GAP_SIZE = 3
     PART_DURATION = 200
     EASE_DURATION = 15
     SHADES = (
@@ -220,7 +220,7 @@ class Interference(DemoPart):
 
     def __init__(self, duration=None):
         self.CIRCLES = pyxel.width // self.GAP_SIZE
-        self.AMPLITUDE = pyxel.width // 6
+        self.AMPLITUDE = pyxel.width // 4
         return super().__init__(duration)
 
     def draw(self):
@@ -243,9 +243,13 @@ class Interference(DemoPart):
             for i in range(2)
         ]
 
-        for x,y in centers:
-            for i in range(self.CIRCLES):
-                pyxel.circb(x, y, i* self.GAP_SIZE, color)
+        for j,(x,y) in enumerate(centers):
+            for i in range(self.CIRCLES, -1, -1):
+                if i % 2 or i == 0:
+                    pyxel.image(j).circ(x, y, i * self.GAP_SIZE, color)
+                else:
+                    pyxel.image(j).circ(x, y, i * self.GAP_SIZE, pyxel.COLOR_BLACK)
+            pyxel.blt(0, 0, j, 0, 0, pyxel.width, pyxel.height, pyxel.COLOR_BLACK)
 
         super().draw()
         
@@ -522,6 +526,9 @@ class AmigaBall(DemoPart):
             print(self.tick)
 
         dy = pyxel.height - self.BOUNCE_HEIGHT * abs(pyxel.sin(self.tick * self.BOUNCE_SPEED)) - self.obj.RADIUS
+
+        # pyxel.circ(self.dx + 7, dy + 4, self.obj.RADIUS * 1.1, 1)
+
         for face, normal in zip(self.obj.FACES, self.obj.normals):
             if normal > 15: # there's something phishy here, should be compared to zero, so the given object face is looking towards the camera
                 if face.color:
