@@ -1,3 +1,4 @@
+import typing
 import pyxel
 
 # linear interpolation hurts my eyes, so here we go
@@ -390,6 +391,15 @@ class AmigaBall(DemoPart):
 
     class Object3D():
 
+        class Point3D(typing.NamedTuple):
+            x: float
+            y: float
+            z: float
+
+        class Point2D(typing.NamedTuple):
+            x: float
+            y: float
+
         class Face():
             def __init__(self, edges, color = None) -> None:
                 self.edges = edges
@@ -402,7 +412,7 @@ class AmigaBall(DemoPart):
 
         def __init__(self):
             # vertex generation
-            self.VERTICES_ORIG = [(0, -self.RADIUS, 0)]
+            self.VERTICES_ORIG = [self.Point3D(0, -self.RADIUS, 0)]
             for j in range(self.LATITUDES):
                 lat = (j+1) * 180 / (self.LATITUDES + 1)
                 for i in range(self.LONGITUDES):
@@ -410,12 +420,13 @@ class AmigaBall(DemoPart):
                     x = self.RADIUS * pyxel.sin(degree) * pyxel.sin(lat)
                     y = - self.RADIUS * pyxel.cos(lat)
                     z = self.RADIUS * pyxel.cos(degree) * pyxel.sin(lat)
-                    self.VERTICES_ORIG.append((x, y, z))
-            self.VERTICES_ORIG.append((0, self.RADIUS, 0))
+                    self.VERTICES_ORIG.append(self.Point3D(x, y, z))
+            self.VERTICES_ORIG.append(self.Point3D(0, self.RADIUS, 0))
 
             # face generation
             self.FACES = []
             color_idx = 0
+            # face generation of top triangles
             for i in range(self.LONGITUDES):
                 color = pyxel.COLOR_WHITE if color_idx % 2 else pyxel.COLOR_RED
                 color_idx += 1
@@ -427,7 +438,7 @@ class AmigaBall(DemoPart):
                     self.FACES.append(
                         self.Face((0, i+1, 1), color)
                     )
-
+            # face generation of middle "quads"
             for j in range(self.LATITUDES - 1):
                 color_idx += 1
                 for i in range(self.LONGITUDES):
@@ -445,9 +456,8 @@ class AmigaBall(DemoPart):
                         d = (j+1) * self.LONGITUDES + 1
                     self.FACES.append(self.Face((c, b, a), color))
                     self.FACES.append(self.Face((c, d, b), color))                        
-
+            # face generation of bottom triangles
             last_vertex = len(self.VERTICES_ORIG) - 1
-
             for i in range(self.LONGITUDES):
                 color_idx += 1
                 color = pyxel.COLOR_WHITE if color_idx % 2 else pyxel.COLOR_RED
@@ -466,7 +476,6 @@ class AmigaBall(DemoPart):
             self.rotate()
 
         def update(self):
-            self.beta += 360/10/10
             self.rotate()
 
         def rotate(self):
@@ -477,32 +486,33 @@ class AmigaBall(DemoPart):
                 [-pyxel.sin(self.beta), pyxel.sin(self.alpha)*pyxel.cos(self.beta), pyxel.cos(self.alpha)*pyxel.cos(self.beta)]
             ]
             # apply rotation matrix to get the current position of vertices
-            self.vertices = tuple(
-                (
+            self.vertices3d = tuple(
+                self.Point3D(
                     sum([i*j for (i,j) in zip(vertex, rot[0])]),
                     sum([i*j for (i,j) in zip(vertex, rot[1])]),
                     sum([i*j for (i,j) in zip(vertex, rot[2])])
                 )
                 for vertex in self.VERTICES_ORIG
             )
-            # calculate face normals
+            
+            # projection of 3d coordinates to 2d display plane https://en.wikipedia.org/wiki/3D_projection
+            self.vertices2d = tuple(
+                self.Point2D(
+                    vertex.x * self.CAMERA_DISTANCE / (vertex.z + self.CAMERA_DISTANCE),
+                    vertex.y * self.CAMERA_DISTANCE / (vertex.z + self.CAMERA_DISTANCE)
+                )
+                for vertex in self.vertices3d
+            )
+
+            # calculate face normals. or actually only the z component to check if it facing the camera or not
             self.normals = tuple(
                 (
                     # V = P1-P0, W = P2-P0
                     # Nz = Vx*Wy-Vy*Wx = (p1x-p0x) * (p2y-p0y) - (p1y-p0y) * (p2x-p0x)
-                    (self.vertices[face.edges[1]][0] - self.vertices[face.edges[0]][0]) * (self.vertices[face.edges[2]][1] - self.vertices[face.edges[0]][1]) -
-                    (self.vertices[face.edges[1]][1] - self.vertices[face.edges[0]][1]) * (self.vertices[face.edges[2]][0] - self.vertices[face.edges[0]][0])
+                    (self.vertices3d[face.edges[1]].x - self.vertices3d[face.edges[0]].x) * (self.vertices3d[face.edges[2]].y - self.vertices3d[face.edges[0]].y) -
+                    (self.vertices3d[face.edges[1]].y - self.vertices3d[face.edges[0]].y) * (self.vertices3d[face.edges[2]].x - self.vertices3d[face.edges[0]].x)
                 )
                 for face in self.FACES
-            )
-            
-            # projection of 3d coordinates to 2d display plane https://en.wikipedia.org/wiki/3D_projection
-            self.vertices2d = tuple(
-                (
-                    vertex[0] * self.CAMERA_DISTANCE / (vertex[2] + self.CAMERA_DISTANCE),
-                    vertex[1] * self.CAMERA_DISTANCE / (vertex[2] + self.CAMERA_DISTANCE)
-                )
-                for vertex in self.vertices
             )
 
     def __init__(self, duration=None):
@@ -513,6 +523,7 @@ class AmigaBall(DemoPart):
         self.bounce_direction = 1
         super().__init__(duration)
     def update(self):
+        self.obj.beta += 3 * self.bounce_direction
         self.obj.update()
         return super().update()
     
@@ -531,20 +542,18 @@ class AmigaBall(DemoPart):
 
         dy = pyxel.height - self.BOUNCE_HEIGHT * abs(pyxel.sin(self.tick * self.BOUNCE_SPEED)) - self.obj.RADIUS
 
-        # pyxel.circ(self.dx + 7, dy + 4, self.obj.RADIUS * 1.1, 1)
-
         for face, normal in zip(self.obj.FACES, self.obj.normals):
-            if normal > 15: # there's something phishy here, should be compared to zero, so the given object face is looking towards the camera
-                if face.color:
-                    pyxel.tri(
-                        self.obj.vertices2d[face.edges[0]][0] + self.dx,
-                        self.obj.vertices2d[face.edges[0]][1] + dy,
-                        self.obj.vertices2d[face.edges[1]][0] + self.dx,
-                        self.obj.vertices2d[face.edges[1]][1] + dy,
-                        self.obj.vertices2d[face.edges[2]][0] + self.dx,
-                        self.obj.vertices2d[face.edges[2]][1] + dy,
-                        face.color
-                    )
+            # there's something phishy here, should be compared to zero, so the given object face is looking towards the camera
+            if normal > 18 and face.color:
+                pyxel.tri(
+                    self.obj.vertices2d[face.edges[0]].x + self.dx,
+                    self.obj.vertices2d[face.edges[0]].y + dy,
+                    self.obj.vertices2d[face.edges[1]].x + self.dx,
+                    self.obj.vertices2d[face.edges[1]].y + dy,
+                    self.obj.vertices2d[face.edges[2]].x + self.dx,
+                    self.obj.vertices2d[face.edges[2]].y + dy,
+                    face.color
+                )
         return super().draw()
 
 class ShadeBobs(DemoPart):
