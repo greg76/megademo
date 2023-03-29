@@ -616,16 +616,92 @@ class ShadeBobs(DemoPart):
         # text animation is handled by parent class
         super().draw()
 
+class Twister(DemoPart):
+    WIDTH = 32
+    DEPTH = 8
+    SPEED = 3
+
+    def update(self):
+        return super().update()
+    
+    def draw(self):
+        pyxel.cls(pyxel.COLOR_BLACK)
+
+        for y in range(pyxel.height):
+
+            angle = self.tick * self.SPEED + y * 0.4
+            w_top = self.WIDTH * pyxel.sin(angle)
+            w_side = self.DEPTH * pyxel.cos(angle)
+
+            x = pyxel.width / 2
+
+            pyxel.line(x - w_top / 2, y, x + w_top / 2, y, pyxel.COLOR_YELLOW)
+            pyxel.line(x + w_top / 2, y, x + w_top / 2 + w_side, y, pyxel.COLOR_ORANGE)
+
+        return super().draw()
+
+class Tornado(DemoPart):
+    TITLE_TEXT = "chaos tornado\nblitter feedback\nyou name it"
+
+    SEED_SIZE = 4
+    BLOCKS = 4
+
+    def __init__(self, duration=None):
+        super().__init__(duration)
+        self.seed_start_x = (pyxel.width - self.SEED_SIZE) / 2
+        self.seed_start_y = (pyxel.height - self.SEED_SIZE) / 2
+        self.block_x_size = pyxel.width  / self.BLOCKS
+        self.block_y_size = pyxel.height / self.BLOCKS
+        self.dirty = True
+
+    def draw(self):
+        if self.dirty:
+            pyxel.image(0).cls(pyxel.COLOR_BLACK)
+            pyxel.image(1).cls(pyxel.COLOR_BLACK)
+            pyxel.cls(pyxel.COLOR_BLACK)
+            self.dirty = False
+
+        if self.tick < (self.duration - 168):
+            for y in range(self.SEED_SIZE):
+                for x in range(self.SEED_SIZE):
+                    color = pyxel.rndi(1, 15)
+                    pyxel.image(0).pset(self.seed_start_x + x, self.seed_start_y + y, color)
+        else:
+            pyxel.image(0).rect(self.seed_start_x, self.seed_start_y, self.SEED_SIZE, self.SEED_SIZE, pyxel.COLOR_BLACK)
+
+        shift = 0
+        for i in range(5):
+            shift = (shift << 1) | ((self.tick >> i) & 1)
+
+        for yidx in range(-1, self.BLOCKS):
+            for xidx in range(-1, self.BLOCKS):
+                pyxel.image(1).blt(
+                    xidx * self.block_x_size + shift,
+                    yidx * self.block_y_size + shift + self.BLOCKS / 2,
+                    0,
+                    xidx * self.block_x_size + shift + self.BLOCKS / 2 - yidx - xidx,
+                    yidx * self.block_y_size + shift + xidx + self.BLOCKS / 2 - yidx,
+                    self.block_x_size, self.block_y_size
+                )
+
+        pyxel.image(0).blt(0,0, 1, 0,0, pyxel.width,pyxel.height)
+        pyxel.blt(0,0, 1, 0,0, pyxel.width,pyxel.height)
+
+        super().draw()
+
+
 class App:
     def __init__(self):
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
+            #Twister(),
             C64loader(120),
             GuruMeditation(),
             ShadeBobs(240),
             RasterBar(240),
             Interference(240),
+            Tornado(360),
             Bouncy(240),
             AmigaBall(260),
             MandelBrot(),
