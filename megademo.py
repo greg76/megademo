@@ -63,6 +63,11 @@ class DemoPart:
                 pyxel.text(x + 0, y + 1, line, self.TITLE_SHADOW)
                 pyxel.text(x, y, line, self.TITLE_COLOR)
 
+        if self.is_finished():
+            pyxel.image(0).cls(pyxel.COLOR_BLACK)
+            pyxel.image(1).cls(pyxel.COLOR_BLACK)
+            pyxel.cls(pyxel.COLOR_BLACK)
+
     def is_finished(self):
         return self.__finished__
 
@@ -652,16 +657,9 @@ class Tornado(DemoPart):
         self.seed_start_y = (pyxel.height - self.SEED_SIZE) / 2
         self.block_x_size = pyxel.width  / self.BLOCKS
         self.block_y_size = pyxel.height / self.BLOCKS
-        self.dirty = True
 
     def draw(self):
-        if self.dirty:
-            pyxel.image(0).cls(pyxel.COLOR_BLACK)
-            pyxel.image(1).cls(pyxel.COLOR_BLACK)
-            pyxel.cls(pyxel.COLOR_BLACK)
-            self.dirty = False
-
-        if self.tick < (self.duration - 168):
+        if not self.duration or self.tick < (self.duration - 168):
             for y in range(self.SEED_SIZE):
                 for x in range(self.SEED_SIZE):
                     color = pyxel.rndi(1, 15)
@@ -689,12 +687,63 @@ class Tornado(DemoPart):
 
         super().draw()
 
+class Tornado2(DemoPart):
+    TITLE_TEXT = "chaos tornado\nblitter feedback\nyou name it"
+    SEED_SIZE = 4
+    BLOCK_SIZE = 16
+    ROTATION = 65
+    PUSH = 2
+
+    def __init__(self, duration=None):
+        super().__init__(duration)
+        self.seed_start_x = (pyxel.width - self.SEED_SIZE) / 2
+        self.seed_start_y = (pyxel.height - self.SEED_SIZE) / 2
+
+        self.shift_pattern = tuple(
+            tuple(
+                self.ROTATION + pyxel.atan2(
+                    (yidx + 0.5) * self.BLOCK_SIZE - pyxel.height / 2,
+                    (xidx + 0.5) * self.BLOCK_SIZE - pyxel.width / 2,
+                )
+                for xidx in range(pyxel.width // self.BLOCK_SIZE)
+            )
+            for yidx in range(pyxel.height // self.BLOCK_SIZE)
+        )
+
+    def draw(self):
+        for y in range(self.SEED_SIZE):
+            for x in range(self.SEED_SIZE):
+                color = pyxel.rndi(1, 15)
+                pyxel.image(0).pset(self.seed_start_x + x, self.seed_start_y + y, color)
+        
+        shift = 0
+        for i in range(5):
+            shift = (shift << 1) | ((self.tick >> i) & 1)
+
+        for yidx in range(pyxel.height // self.BLOCK_SIZE):
+            for xidx in range(pyxel.width // self.BLOCK_SIZE):
+                dx = self.PUSH * pyxel.sin(self.shift_pattern[xidx][yidx])
+                dy = self.PUSH * pyxel.cos(self.shift_pattern[xidx][yidx])
+                pyxel.image(1).blt(
+                    xidx * self.BLOCK_SIZE + shift,
+                    yidx * self.BLOCK_SIZE + shift,
+                    0,
+                    xidx * self.BLOCK_SIZE + shift - dx,
+                    yidx * self.BLOCK_SIZE + shift - dy,
+                    self.BLOCK_SIZE, self.BLOCK_SIZE
+                )
+
+        pyxel.image(0).blt(0,0, 1, 0,0, pyxel.width,pyxel.height)
+        pyxel.blt(0,0, 1, 0,0, pyxel.width,pyxel.height)
+
+        super().draw()
 
 class App:
     def __init__(self):
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
+            #Tornado2(),
             #Twister(),
             C64loader(120),
             GuruMeditation(),
