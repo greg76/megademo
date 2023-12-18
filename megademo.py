@@ -1,9 +1,10 @@
 import typing
 import pyxel
 
-# linear interpolation hurts my eyes, so here we go
+
 def EaseIn(duration, current):
-    if current <=0:
+    # linear interpolation hurts my eyes, so here we go
+    if current <= 0:
         return 0
     elif current >= duration:
         return 1
@@ -11,14 +12,16 @@ def EaseIn(duration, current):
         deg = 270 + 90 * current / duration
         return pyxel.sin(deg) + 1
 
+
 def EaseOut(duration, current):
-    if current <=0:
+    if current <= 0:
         return 0
     elif current >= duration:
         return 1
     else:
         deg = 90 * current / duration
         return pyxel.sin(deg)
+
 
 class DemoPart:
     TITLE_TEXT = None
@@ -44,14 +47,13 @@ class DemoPart:
                 self.__finished__ = True
 
     def draw(self):
-
         # if theres a TITLE defined, let's ease it in-and-out
         if self.TITLE_TEXT:
             lines = self.TITLE_TEXT.split("\n")
             maxlen = max(len(line) for line in lines) * pyxel.FONT_WIDTH
             for i, line in enumerate(lines):
                 w = len(line) * pyxel.FONT_WIDTH
-                x = pyxel.width - w - 1 
+                x = pyxel.width - w - 1
                 if self.tick <= self.TITLE_EASE:
                     x += maxlen * EaseIn(self.TITLE_EASE, self.TITLE_EASE - self.tick)
                 elif self.duration and self.tock < self.TITLE_EASE:
@@ -71,8 +73,8 @@ class DemoPart:
     def is_finished(self):
         return self.__finished__
 
-class C64loader(DemoPart):
 
+class C64loader(DemoPart):
     BOARDER_WIDTH = 10
 
     def draw(self):
@@ -80,21 +82,25 @@ class C64loader(DemoPart):
             pyxel.cls(pyxel.COLOR_LIGHT_BLUE)
         else:
             for y in range(pyxel.height):
-                pyxel.line(0, y, pyxel.width, y, pyxel.rndi(0, pyxel.NUM_COLORS-1))
+                pyxel.line(0, y, pyxel.width, y, pyxel.rndi(0, pyxel.NUM_COLORS - 1))
 
         pyxel.rect(
-            self.BOARDER_WIDTH, self.BOARDER_WIDTH,
-            pyxel.width - self.BOARDER_WIDTH * 2, pyxel.height - self.BOARDER_WIDTH * 2,
-            pyxel.COLOR_DARK_BLUE
+            self.BOARDER_WIDTH,
+            self.BOARDER_WIDTH,
+            pyxel.width - self.BOARDER_WIDTH * 2,
+            pyxel.height - self.BOARDER_WIDTH * 2,
+            pyxel.COLOR_DARK_BLUE,
         )
 
         pyxel.text(
-            self.BOARDER_WIDTH + 1, self.BOARDER_WIDTH + 1,
-            "READY.\nLOAD\"MEGADEMO\"\n\nSEARCHING FOR MEGADEMO\nLOADING\nREADY.\nRUN",
-            pyxel.COLOR_LIGHT_BLUE)
+            self.BOARDER_WIDTH + 1,
+            self.BOARDER_WIDTH + 1,
+            'READY.\nLOAD"MEGADEMO"\n\nSEARCHING FOR MEGADEMO\nLOADING\nREADY.\nRUN',
+            pyxel.COLOR_LIGHT_BLUE,
+        )
+
 
 class RasterBar(DemoPart):
-
     TITLE_TEXT = 'This is dedicated to\nCsico "raster bar" Laszlo'
     EASE_DURATION = 60
 
@@ -104,7 +110,7 @@ class RasterBar(DemoPart):
         (pyxel.COLOR_YELLOW, 2),
         (pyxel.COLOR_WHITE, 1),
         (pyxel.COLOR_YELLOW, 2),
-        (pyxel.COLOR_ORANGE, 1)
+        (pyxel.COLOR_ORANGE, 1),
     )
 
     def draw(self):
@@ -114,16 +120,16 @@ class RasterBar(DemoPart):
             bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tick)
         else:
             bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tock)
-        
+
         bar_start = pyxel.height - int(bar_height)
 
         for y in range(bar_start, pyxel.height):
             for i, streak in enumerate(self.BAR):
                 for w in range(streak[1]):
                     x = pyxel.width // 2
-                    x += pyxel.sin(self.tick * 4 + y*6) * 30
+                    x += pyxel.sin(self.tick * 4 + y * 6) * 30
                     x += pyxel.sin(self.tick * 6 + 130 + y * 3) * 20
-                    pyxel.line(x+i+w, y, x+i+w, pyxel.height, streak[0])
+                    pyxel.line(x + i + w, y, x + i + w, pyxel.height, streak[0])
 
         super().draw()
 
@@ -143,7 +149,7 @@ class GuruMeditation(DemoPart):
             (
                 pyxel.rndi(0, pyxel.width - 1),
                 pyxel.rndi(0, pyxel.height - 1),
-                pyxel.rndi(1, len(self.STAR_SHADES))
+                pyxel.rndi(1, len(self.STAR_SHADES)),
             )
             for _ in range(self.NO_OF_STARS)
         )
@@ -157,7 +163,10 @@ class GuruMeditation(DemoPart):
                 x, y, v = star
 
                 if self.tick - self.SCROLL_DELAY < self.EASE_OUT_DURATION:
-                    c = int((v - 1) * EaseIn(self.EASE_OUT_DURATION, self.tick - self.SCROLL_DELAY))
+                    c = int(
+                        (v - 1)
+                        * EaseIn(self.EASE_OUT_DURATION, self.tick - self.SCROLL_DELAY)
+                    )
                 else:
                     c = self.STAR_SHADES[v - 1]
                 pyxel.pset(x, y, c)
@@ -170,7 +179,7 @@ class GuruMeditation(DemoPart):
                     v = pyxel.rndi(1, len(self.STAR_SHADES))
                     self.stars[i] = (x, y, v)
                 else:
-                    del(self.stars[i])
+                    del self.stars[i]
 
             for i, letter in enumerate(self.SCROLL_TEXT):
                 x = pyxel.width - self.tick + self.SCROLL_DELAY + i * pyxel.FONT_WIDTH
@@ -184,16 +193,21 @@ class GuruMeditation(DemoPart):
                     pyxel.text(x, y, letter, color)
 
                 if i == len(self.SCROLL_TEXT) - 1:
-                    self.last_letter_x = x                
+                    self.last_letter_x = x
                     if x <= -pyxel.FONT_WIDTH:
                         self.__finished__ = True
 
-        if self.last_letter_x is not None and self.last_letter_x <= self.EASE_OUT_DURATION:
+        if (
+            self.last_letter_x is not None
+            and self.last_letter_x <= self.EASE_OUT_DURATION
+        ):
             current_delta = self.EASE_OUT_DURATION - self.last_letter_x
-            box_y = int(-pyxel.FONT_HEIGHT * 3 * EaseIn(self.EASE_OUT_DURATION, current_delta))
+            box_y = int(
+                -pyxel.FONT_HEIGHT * 3 * EaseIn(self.EASE_OUT_DURATION, current_delta)
+            )
         else:
             box_y = 0
-        
+
         border_blink = self.tick // 15 % 2
         if border_blink == 0:
             pyxel.rectb(0, box_y, pyxel.width, pyxel.FONT_HEIGHT * 3, pyxel.COLOR_RED)
@@ -201,17 +215,15 @@ class GuruMeditation(DemoPart):
         for i, line in enumerate(self.GURU_TEXT):
             w = len(line) * pyxel.FONT_WIDTH
             x = (pyxel.width - w) // 2
-            pyxel.text(
-                x, box_y + 3 + i * pyxel.FONT_HEIGHT,
-                line,
-                pyxel.COLOR_RED
-            )
+            pyxel.text(x, box_y + 3 + i * pyxel.FONT_HEIGHT, line, pyxel.COLOR_RED)
 
 
 class Interference(DemoPart):
-    TITLE_TEXT = "Waves clash and intersect,\n" \
-                 "Interference patterns form,\n" \
-                 "Chaos in motion."
+    TITLE_TEXT = (
+        "Waves clash and intersect,\n"
+        "Interference patterns form,\n"
+        "Chaos in motion."
+    )
     GAP_SIZE = 3
     PART_DURATION = 200
     EASE_DURATION = 15
@@ -221,7 +233,7 @@ class Interference(DemoPart):
         pyxel.COLOR_BROWN,
         pyxel.COLOR_ORANGE,
         pyxel.COLOR_YELLOW,
-        pyxel.COLOR_WHITE
+        pyxel.COLOR_WHITE,
     )
 
     def __init__(self, duration=None):
@@ -243,13 +255,13 @@ class Interference(DemoPart):
 
         centers = [
             (
-                pyxel.width//2  + self.AMPLITUDE * pyxel.sin(self.tick * 3 * (i + 1) ),
-                pyxel.height//2 - self.AMPLITUDE * pyxel.cos(self.tick * 2 * (i + 1) )
+                pyxel.width // 2 + self.AMPLITUDE * pyxel.sin(self.tick * 3 * (i + 1)),
+                pyxel.height // 2 - self.AMPLITUDE * pyxel.cos(self.tick * 2 * (i + 1)),
             )
             for i in range(2)
         ]
 
-        for j,(x,y) in enumerate(centers):
+        for j, (x, y) in enumerate(centers):
             for i in range(self.CIRCLES, -1, -1):
                 if i % 2 or i == 0:
                     pyxel.image(j).circ(x, y, i * self.GAP_SIZE, color)
@@ -258,45 +270,47 @@ class Interference(DemoPart):
             pyxel.blt(0, 0, j, 0, 0, pyxel.width, pyxel.height, pyxel.COLOR_BLACK)
 
         super().draw()
-        
+
 
 class MandelBrot(DemoPart):
     EASE_DURATION = 60
     SIZE = 64
     SHADES = (
-        (32,  pyxel.COLOR_NAVY),
-        (48,  pyxel.COLOR_PURPLE),
+        (32, pyxel.COLOR_NAVY),
+        (48, pyxel.COLOR_PURPLE),
         (96, pyxel.COLOR_RED),
         (255, pyxel.COLOR_ORANGE),
         (256, pyxel.COLOR_YELLOW),
     )
-    TITLE_TEXT = "I have to confess\n" \
-                 "Always faked voxel landscapes\n" \
-                 "This time it's for real"
+    TITLE_TEXT = (
+        "I have to confess\n"
+        "Always faked voxel landscapes\n"
+        "This time it's for real"
+    )
 
-    def __init__(self, duration = None):
+    def __init__(self, duration=None):
         # parameters for centering and precision of the mandelbrot
         max_iteration = 1000
-        x_center =  -0.65
-        y_center =  0.0
+        x_center = -0.65
+        y_center = 0.0
 
         # pre-calc the mandelbrot
         self.reference_data = []
         for i in range(self.SIZE):
             for j in range(self.SIZE):
-                x = x_center + 2.8*float(i-self.SIZE/2)/self.SIZE
-                y = y_center + 2.8*float(j-self.SIZE/2)/self.SIZE
+                x = x_center + 2.8 * float(i - self.SIZE / 2) / self.SIZE
+                y = y_center + 2.8 * float(j - self.SIZE / 2) / self.SIZE
 
-                a,b = (0.0, 0.0)
+                a, b = (0.0, 0.0)
                 iteration = 0
 
-                while (a**2 + b**2 <= 4.0 and iteration < max_iteration):
-                    a,b = a**2 - b**2 + x, 2*a*b + y
+                while a**2 + b**2 <= 4.0 and iteration < max_iteration:
+                    a, b = a**2 - b**2 + x, 2 * a * b + y
                     iteration += 1
                 if iteration == max_iteration:
                     value = 255
                 else:
-                    value = iteration*10 % 256
+                    value = iteration * 10 % 256
 
                 self.reference_data.append((i, j, value))
 
@@ -305,17 +319,20 @@ class MandelBrot(DemoPart):
         super().__init__(duration)
 
     def update(self):
-
         rot = self.tick % 360
 
         # create rotated copy of the mandelbrot set
         self.rotated_data = [
-        (
-            pyxel.cos(rot) * (x - self.SIZE // 2) - pyxel.sin(rot) * (y - self.SIZE // 2) + self.SIZE // 2,
-            pyxel.sin(rot) * (x - self.SIZE // 2) + pyxel.cos(rot) * (y - self.SIZE // 2) + self.SIZE // 2,
-            v
-        )
-        for x, y, v in self.reference_data    
+            (
+                pyxel.cos(rot) * (x - self.SIZE // 2)
+                - pyxel.sin(rot) * (y - self.SIZE // 2)
+                + self.SIZE // 2,
+                pyxel.sin(rot) * (x - self.SIZE // 2)
+                + pyxel.cos(rot) * (y - self.SIZE // 2)
+                + self.SIZE // 2,
+                v,
+            )
+            for x, y, v in self.reference_data
         ]
 
         return super().update()
@@ -332,16 +349,23 @@ class MandelBrot(DemoPart):
             d = 0
 
         # render voxel columns for each rotated point
-        for x, y, value in sorted(self.rotated_data, key=lambda p: p[1]*500 + p[0], reverse=True):
+        for x, y, value in sorted(
+            self.rotated_data, key=lambda p: p[1] * 500 + p[0], reverse=True
+        ):
             x *= 128 / self.SIZE
             y *= 128 / self.SIZE
             h = value // 4 + (y + d) // 2
-            i, c = next((i, shade[1]) for i, shade in enumerate(self.SHADES) if shade[0] > value)
-            highlight = self.SHADES[i + 1][1] if i < len(self.SHADES) - 1 else pyxel.COLOR_WHITE 
-            pyxel.rect(x, pyxel.height - h + d * 2, 2,  h + d * 2, c)
+            i, c = next(
+                (i, shade[1]) for i, shade in enumerate(self.SHADES) if shade[0] > value
+            )
+            highlight = (
+                self.SHADES[i + 1][1] if i < len(self.SHADES) - 1 else pyxel.COLOR_WHITE
+            )
+            pyxel.rect(x, pyxel.height - h + d * 2, 2, h + d * 2, c)
             pyxel.rect(x, pyxel.height - h + d * 2, 2, 2, highlight)
 
         super().draw()
+
 
 class Bouncy(DemoPart):
     PLATES = 16
@@ -349,29 +373,29 @@ class Bouncy(DemoPart):
     SPEED = -6
     COLOR_SHADES = (
         (pyxel.COLOR_NAVY, pyxel.COLOR_DARK_BLUE, pyxel.COLOR_CYAN),
-        (pyxel.COLOR_BROWN, pyxel.COLOR_ORANGE, pyxel.COLOR_YELLOW)
+        (pyxel.COLOR_BROWN, pyxel.COLOR_ORANGE, pyxel.COLOR_YELLOW),
     )
     EASE_DURATION = 60
     TITLE_TEXT = "demoscene =\nsin() + cos()"
 
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
-        
+
         for i in range(self.PLATES):
             for j in range(self.PLATES):
                 # distance of the current point from the center
-                d = abs( (i - self.PLATES / 2)**2 + (j - self.PLATES / 2)**2 )
+                d = abs((i - self.PLATES / 2) ** 2 + (j - self.PLATES / 2) ** 2)
                 # height/size of the plate is dependent on time and distance from center: we are sending waves from the middle
-                h = pyxel.sin( d * self.WAVE_LENGTH + self.tick * self.SPEED)
+                h = pyxel.sin(d * self.WAVE_LENGTH + self.tick * self.SPEED)
                 # normalise h, so 0 <= h <= 1
                 h = (h + 1) / 2
                 # gradually elevate up/down during phase in/out
                 if self.tick < self.EASE_DURATION:
                     tmp = h - 1 + EaseIn(self.EASE_DURATION, self.tick)
-                    h =  tmp if tmp > 0 else 0
+                    h = tmp if tmp > 0 else 0
                 elif self.duration and self.tock < self.EASE_DURATION:
                     tmp = h - 1 + EaseIn(self.EASE_DURATION, self.tock)
-                    h =  tmp if tmp > 0 else 0
+                    h = tmp if tmp > 0 else 0
 
                 # distance between tiles
                 spacing = pyxel.width / self.PLATES
@@ -380,22 +404,21 @@ class Bouncy(DemoPart):
                 # color is picked as if were a chess board
                 color = self.COLOR_SHADES[(i + j) % 2]
                 # shade is dependent on the height/size of the tile
-                idx = int(len(color)*h)
-                capped_idx =  idx if idx < len(color) else len(color)-1
+                idx = int(len(color) * h)
+                capped_idx = idx if idx < len(color) else len(color) - 1
                 shade = color[capped_idx]
                 # need to center the tiles that change size
-                x = int( (i + 0.5) * spacing - w / 2 )
-                y = int( (j + 0.5) * spacing - w / 2 )
+                x = int((i + 0.5) * spacing - w / 2)
+                y = int((j + 0.5) * spacing - w / 2)
                 pyxel.rect(x, y, w, w, shade)
 
         super().draw()
-        
+
+
 class AmigaBall(DemoPart):
-    
     TITLE_TEXT = "When I first saw an Amiga\nI was tripping balls!"
 
-    class Object3D():
-
+    class Object3D:
         class Point3D(typing.NamedTuple):
             x: float
             y: float
@@ -405,8 +428,8 @@ class AmigaBall(DemoPart):
             x: float
             y: float
 
-        class Face():
-            def __init__(self, edges, color = None) -> None:
+        class Face:
+            def __init__(self, edges, color=None) -> None:
                 self.edges = edges
                 self.color = color
 
@@ -419,11 +442,11 @@ class AmigaBall(DemoPart):
             # vertex generation
             self.VERTICES_ORIG = [self.Point3D(0, -self.RADIUS, 0)]
             for j in range(self.LATITUDES):
-                lat = (j+1) * 180 / (self.LATITUDES + 1)
+                lat = (j + 1) * 180 / (self.LATITUDES + 1)
                 for i in range(self.LONGITUDES):
                     degree = i * 360 / self.LONGITUDES
                     x = self.RADIUS * pyxel.sin(degree) * pyxel.sin(lat)
-                    y = - self.RADIUS * pyxel.cos(lat)
+                    y = -self.RADIUS * pyxel.cos(lat)
                     z = self.RADIUS * pyxel.cos(degree) * pyxel.sin(lat)
                     self.VERTICES_ORIG.append(self.Point3D(x, y, z))
             self.VERTICES_ORIG.append(self.Point3D(0, self.RADIUS, 0))
@@ -437,12 +460,10 @@ class AmigaBall(DemoPart):
                 color_idx += 1
                 if i < self.LONGITUDES - 1:
                     self.FACES.append(
-                        self.Face((0, i+1, i+2), color),
+                        self.Face((0, i + 1, i + 2), color),
                     )
                 else:
-                    self.FACES.append(
-                        self.Face((0, i+1, 1), color)
-                    )
+                    self.FACES.append(self.Face((0, i + 1, 1), color))
             # face generation of middle "quads"
             for j in range(self.LATITUDES - 1):
                 color_idx += 1
@@ -452,15 +473,15 @@ class AmigaBall(DemoPart):
                     if i < self.LONGITUDES - 1:
                         a = j * self.LONGITUDES + i + 1
                         b = j * self.LONGITUDES + i + 2
-                        c = (j+1) * self.LONGITUDES + i + 1
-                        d = (j+1) * self.LONGITUDES + i + 2
+                        c = (j + 1) * self.LONGITUDES + i + 1
+                        d = (j + 1) * self.LONGITUDES + i + 2
                     else:
                         a = j * self.LONGITUDES + i + 1
                         b = j * self.LONGITUDES + 1
-                        c = (j+1) * self.LONGITUDES + i + 1
-                        d = (j+1) * self.LONGITUDES + 1
+                        c = (j + 1) * self.LONGITUDES + i + 1
+                        d = (j + 1) * self.LONGITUDES + 1
                     self.FACES.append(self.Face((c, b, a), color))
-                    self.FACES.append(self.Face((c, d, b), color))                        
+                    self.FACES.append(self.Face((c, d, b), color))
             # face generation of bottom triangles
             last_vertex = len(self.VERTICES_ORIG) - 1
             for i in range(self.LONGITUDES):
@@ -468,11 +489,21 @@ class AmigaBall(DemoPart):
                 color = pyxel.COLOR_WHITE if color_idx % 2 else pyxel.COLOR_RED
                 if i < self.LONGITUDES - 1:
                     self.FACES.append(
-                        self.Face((last_vertex, last_vertex - i - 1, last_vertex - i - 2), color),
+                        self.Face(
+                            (last_vertex, last_vertex - i - 1, last_vertex - i - 2),
+                            color,
+                        ),
                     )
                 else:
                     self.FACES.append(
-                        self.Face((last_vertex, last_vertex - self.LONGITUDES, last_vertex - 1), color)
+                        self.Face(
+                            (
+                                last_vertex,
+                                last_vertex - self.LONGITUDES,
+                                last_vertex - 1,
+                            ),
+                            color,
+                        )
                     )
 
             self.alpha = 0
@@ -486,25 +517,41 @@ class AmigaBall(DemoPart):
         def rotate(self):
             # setting up rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix
             rot = [
-                [pyxel.cos(self.beta)*pyxel.cos(self.gamma), pyxel.sin(self.alpha)*pyxel.sin(self.beta)*pyxel.cos(self.gamma)-pyxel.cos(self.alpha)*pyxel.sin(self.gamma), pyxel.cos(self.alpha)*pyxel.sin(self.beta)*pyxel.cos(self.gamma)+pyxel.sin(self.alpha)*pyxel.sin(self.gamma)],
-                [pyxel.cos(self.beta)*pyxel.sin(self.gamma), pyxel.sin(self.alpha)*pyxel.sin(self.beta)*pyxel.sin(self.gamma)+pyxel.cos(self.alpha)*pyxel.cos(self.gamma), pyxel.cos(self.alpha)*pyxel.sin(self.beta)*pyxel.sin(self.gamma)-pyxel.sin(self.alpha)*pyxel.cos(self.gamma)],
-                [-pyxel.sin(self.beta), pyxel.sin(self.alpha)*pyxel.cos(self.beta), pyxel.cos(self.alpha)*pyxel.cos(self.beta)]
+                [
+                    pyxel.cos(self.beta) * pyxel.cos(self.gamma),
+                    pyxel.sin(self.alpha) * pyxel.sin(self.beta) * pyxel.cos(self.gamma)
+                    - pyxel.cos(self.alpha) * pyxel.sin(self.gamma),
+                    pyxel.cos(self.alpha) * pyxel.sin(self.beta) * pyxel.cos(self.gamma)
+                    + pyxel.sin(self.alpha) * pyxel.sin(self.gamma),
+                ],
+                [
+                    pyxel.cos(self.beta) * pyxel.sin(self.gamma),
+                    pyxel.sin(self.alpha) * pyxel.sin(self.beta) * pyxel.sin(self.gamma)
+                    + pyxel.cos(self.alpha) * pyxel.cos(self.gamma),
+                    pyxel.cos(self.alpha) * pyxel.sin(self.beta) * pyxel.sin(self.gamma)
+                    - pyxel.sin(self.alpha) * pyxel.cos(self.gamma),
+                ],
+                [
+                    -pyxel.sin(self.beta),
+                    pyxel.sin(self.alpha) * pyxel.cos(self.beta),
+                    pyxel.cos(self.alpha) * pyxel.cos(self.beta),
+                ],
             ]
             # apply rotation matrix to get the current position of vertices
             self.vertices3d = tuple(
                 self.Point3D(
-                    sum([i*j for (i,j) in zip(vertex, rot[0])]),
-                    sum([i*j for (i,j) in zip(vertex, rot[1])]),
-                    sum([i*j for (i,j) in zip(vertex, rot[2])])
+                    sum([i * j for (i, j) in zip(vertex, rot[0])]),
+                    sum([i * j for (i, j) in zip(vertex, rot[1])]),
+                    sum([i * j for (i, j) in zip(vertex, rot[2])]),
                 )
                 for vertex in self.VERTICES_ORIG
             )
-            
+
             # projection of 3d coordinates to 2d display plane https://en.wikipedia.org/wiki/3D_projection
             self.vertices2d = tuple(
                 self.Point2D(
                     vertex.x * self.CAMERA_DISTANCE / (vertex.z + self.CAMERA_DISTANCE),
-                    vertex.y * self.CAMERA_DISTANCE / (vertex.z + self.CAMERA_DISTANCE)
+                    vertex.y * self.CAMERA_DISTANCE / (vertex.z + self.CAMERA_DISTANCE),
                 )
                 for vertex in self.vertices3d
             )
@@ -514,8 +561,22 @@ class AmigaBall(DemoPart):
                 (
                     # V = P1-P0, W = P2-P0
                     # Nz = Vx*Wy-Vy*Wx = (p1x-p0x) * (p2y-p0y) - (p1y-p0y) * (p2x-p0x)
-                    (self.vertices3d[face.edges[1]].x - self.vertices3d[face.edges[0]].x) * (self.vertices3d[face.edges[2]].y - self.vertices3d[face.edges[0]].y) -
-                    (self.vertices3d[face.edges[1]].y - self.vertices3d[face.edges[0]].y) * (self.vertices3d[face.edges[2]].x - self.vertices3d[face.edges[0]].x)
+                    (
+                        self.vertices3d[face.edges[1]].x
+                        - self.vertices3d[face.edges[0]].x
+                    )
+                    * (
+                        self.vertices3d[face.edges[2]].y
+                        - self.vertices3d[face.edges[0]].y
+                    )
+                    - (
+                        self.vertices3d[face.edges[1]].y
+                        - self.vertices3d[face.edges[0]].y
+                    )
+                    * (
+                        self.vertices3d[face.edges[2]].x
+                        - self.vertices3d[face.edges[0]].x
+                    )
                 )
                 for face in self.FACES
             )
@@ -527,11 +588,12 @@ class AmigaBall(DemoPart):
         self.dx = -self.obj.RADIUS
         self.bounce_direction = 1
         super().__init__(duration)
+
     def update(self):
         self.obj.beta += 3 * self.bounce_direction
         self.obj.update()
         return super().update()
-    
+
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
 
@@ -539,13 +601,17 @@ class AmigaBall(DemoPart):
         if self.dx >= pyxel.width - self.obj.RADIUS:
             self.bounce_direction = -1
 
-        '''
+        """
         # this is for just checking timing, how many frame it take to complete animation
         if self.bounce_direction == -1 and self.dx < -self.obj.RADIUS:
             print(self.tick)
-        '''
+        """
 
-        dy = pyxel.height - self.BOUNCE_HEIGHT * abs(pyxel.sin(self.tick * self.BOUNCE_SPEED)) - self.obj.RADIUS
+        dy = (
+            pyxel.height
+            - self.BOUNCE_HEIGHT * abs(pyxel.sin(self.tick * self.BOUNCE_SPEED))
+            - self.obj.RADIUS
+        )
 
         for face, normal in zip(self.obj.FACES, self.obj.normals):
             # there's something phishy here, should be compared to zero, so the given object face is looking towards the camera
@@ -557,22 +623,30 @@ class AmigaBall(DemoPart):
                     self.obj.vertices2d[face.edges[1]].y + dy,
                     self.obj.vertices2d[face.edges[2]].x + self.dx,
                     self.obj.vertices2d[face.edges[2]].y + dy,
-                    face.color
+                    face.color,
                 )
         return super().draw()
 
+
 class ShadeBobs(DemoPart):
-    SHADES = (pyxel.COLOR_BLACK, pyxel.COLOR_NAVY, pyxel.COLOR_PURPLE, pyxel.COLOR_RED, pyxel.COLOR_ORANGE, pyxel.COLOR_YELLOW)
+    SHADES = (
+        pyxel.COLOR_BLACK,
+        pyxel.COLOR_NAVY,
+        pyxel.COLOR_PURPLE,
+        pyxel.COLOR_RED,
+        pyxel.COLOR_ORANGE,
+        pyxel.COLOR_YELLOW,
+    )
     MASK = (
-        (0,0,0,1,1,1,0,0,0),
-        (0,0,1,1,1,1,1,0,0),
-        (0,1,1,1,1,1,1,1,0),
-        (1,1,1,1,1,1,1,1,1),
-        (1,1,1,1,1,1,1,1,1),
-        (1,1,1,1,1,1,1,1,1),
-        (0,1,1,1,1,1,1,1,0),
-        (0,0,1,1,1,1,1,0,0),
-        (0,0,0,1,1,1,0,0,0),
+        (0, 0, 0, 1, 1, 1, 0, 0, 0),
+        (0, 0, 1, 1, 1, 1, 1, 0, 0),
+        (0, 1, 1, 1, 1, 1, 1, 1, 0),
+        (1, 1, 1, 1, 1, 1, 1, 1, 1),
+        (1, 1, 1, 1, 1, 1, 1, 1, 1),
+        (1, 1, 1, 1, 1, 1, 1, 1, 1),
+        (0, 1, 1, 1, 1, 1, 1, 1, 0),
+        (0, 0, 1, 1, 1, 1, 1, 0, 0),
+        (0, 0, 0, 1, 1, 1, 0, 0, 0),
     )
     MASK_HEIGHT = len(MASK)
     MASK_WIDTH = len(MASK[0])
@@ -588,8 +662,12 @@ class ShadeBobs(DemoPart):
     def draw(self):
         coords = [
             (
-                pyxel.width//2  + self.AMPLITUDE * pyxel.sin(self.tick * 4 * (i + 1)) + self.AMPLITUDE * pyxel.cos(self.tick * 5 * (i + 2)),
-                pyxel.height//2 - self.AMPLITUDE * pyxel.cos(self.tick * 7 * (i + 2)) + self.AMPLITUDE * pyxel.sin(self.tick * 3 * (i + 1))
+                pyxel.width // 2
+                + self.AMPLITUDE * pyxel.sin(self.tick * 4 * (i + 1))
+                + self.AMPLITUDE * pyxel.cos(self.tick * 5 * (i + 2)),
+                pyxel.height // 2
+                - self.AMPLITUDE * pyxel.cos(self.tick * 7 * (i + 2))
+                + self.AMPLITUDE * pyxel.sin(self.tick * 3 * (i + 1)),
             )
             for i in range(self.NO_OF_BLOBS)
         ]
@@ -605,7 +683,7 @@ class ShadeBobs(DemoPart):
                     py = y + i - self.MASK_HEIGHT // 2
                     # read current color
                     color = pyxel.pget(px, py)
-                    # adjust shade based on the look-up table 
+                    # adjust shade based on the look-up table
                     index = self.SHADES.index(color)
                     # if already reached lightest shade, cycle back to a dark one
                     index = index + value if index + value < len(self.SHADES) else 1
@@ -614,36 +692,74 @@ class ShadeBobs(DemoPart):
                     pyxel.image(0).pset(px, py, self.SHADES[index])
 
         # displacement when easying out the background
-        d = pyxel.height * (1 - EaseOut(self.EASE_DURATION, self.tock)) if self.duration and self.tock < self.EASE_DURATION else 0
+        d = (
+            pyxel.height * (1 - EaseOut(self.EASE_DURATION, self.tock))
+            if self.duration and self.tock < self.EASE_DURATION
+            else 0
+        )
         pyxel.cls(pyxel.COLOR_BLACK)
-        pyxel.blt(0,d,0,0,0,pyxel.width,pyxel.height)
+        pyxel.blt(0, d, 0, 0, 0, pyxel.width, pyxel.height)
 
         # text animation is handled by parent class
         super().draw()
 
+
 class Twister(DemoPart):
-    WIDTH = 32
+    TITLE_TEXT = "Twisting and turning\nfeelings are yearning"
+    EASE_DURATION = 60
+    WIDTH = 16
     DEPTH = 8
     SPEED = 3
+    AMPLITUDE = 20
+    SHADES = (
+        (pyxel.COLOR_YELLOW, pyxel.COLOR_ORANGE, pyxel.COLOR_RED, pyxel.COLOR_PURPLE),
+        (pyxel.COLOR_LIGHT_BLUE, pyxel.COLOR_DARK_BLUE, pyxel.COLOR_NAVY),
+    )
 
-    def update(self):
-        return super().update()
-    
+    def lines(colorset, alpha):
+        sides = len(Twister.SHADES[colorset])
+        delta = 360 / sides
+
+        xcoords = [Twister.WIDTH * pyxel.sin(alpha + i * delta) for i in range(sides)]
+
+        lines = [
+            (xcoords[i], xcoords[i + 1], Twister.SHADES[colorset][i])
+            for i in range(sides - 1)
+            if xcoords[i] < xcoords[i + 1]
+        ]
+        if xcoords[-1] < xcoords[0]:
+            lines.append(
+                (xcoords[sides - 1], xcoords[0], Twister.SHADES[colorset][sides - 1])
+            )
+        return lines
+
     def draw(self):
         pyxel.cls(pyxel.COLOR_BLACK)
 
-        for y in range(pyxel.height):
+        if self.tick < self.duration - self.EASE_DURATION:
+            bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tick)
+        else:
+            bar_height = pyxel.height * EaseIn(self.EASE_DURATION, self.tock)
+        bar_start = pyxel.height - int(bar_height)
 
-            angle = self.tick * self.SPEED + y * 0.4
-            w_top = self.WIDTH * pyxel.sin(angle)
-            w_side = self.DEPTH * pyxel.cos(angle)
+        for y in range(bar_start, pyxel.height):
+            for i in range(len(Twister.SHADES)):
+                if i % 2:
+                    rc = self.tick * 2 + y / 3
+                    xc = pyxel.width * 3 // 5 + pyxel.cos(rc) * Twister.AMPLITUDE
+                    rot = self.tick * 4.5 + y * (pyxel.sin(y * 2.5 + self.tick * 1.5))
+                else:
+                    rc = self.tick * 1.5 + y / 4
+                    xc = pyxel.width * 2 // 5 + pyxel.sin(rc) * Twister.AMPLITUDE
+                    rot = self.tick * -2.75 + y * (
+                        -pyxel.sin(y * 1.75 - self.tick * 2.5)
+                    )
 
-            x = pyxel.width / 2
-
-            pyxel.line(x - w_top / 2, y, x + w_top / 2, y, pyxel.COLOR_YELLOW)
-            pyxel.line(x + w_top / 2, y, x + w_top / 2 + w_side, y, pyxel.COLOR_ORANGE)
+                for line in Twister.lines(i, rot):
+                    pyxel.line(xc + line[0], y, xc + line[1], y, line[2])
 
         return super().draw()
+
 
 class Tornado(DemoPart):
     TITLE_TEXT = "chaos tornado\nblitter feedback\nyou name it"
@@ -655,7 +771,7 @@ class Tornado(DemoPart):
         super().__init__(duration)
         self.seed_start_x = (pyxel.width - self.SEED_SIZE) / 2
         self.seed_start_y = (pyxel.height - self.SEED_SIZE) / 2
-        self.block_x_size = pyxel.width  / self.BLOCKS
+        self.block_x_size = pyxel.width / self.BLOCKS
         self.block_y_size = pyxel.height / self.BLOCKS
 
     def draw(self):
@@ -663,9 +779,17 @@ class Tornado(DemoPart):
             for y in range(self.SEED_SIZE):
                 for x in range(self.SEED_SIZE):
                     color = pyxel.rndi(1, 15)
-                    pyxel.image(0).pset(self.seed_start_x + x, self.seed_start_y + y, color)
+                    pyxel.image(0).pset(
+                        self.seed_start_x + x, self.seed_start_y + y, color
+                    )
         else:
-            pyxel.image(0).rect(self.seed_start_x, self.seed_start_y, self.SEED_SIZE, self.SEED_SIZE, pyxel.COLOR_BLACK)
+            pyxel.image(0).rect(
+                self.seed_start_x,
+                self.seed_start_y,
+                self.SEED_SIZE,
+                self.SEED_SIZE,
+                pyxel.COLOR_BLACK,
+            )
 
         shift = 0
         for i in range(5):
@@ -679,72 +803,21 @@ class Tornado(DemoPart):
                     0,
                     xidx * self.block_x_size + shift + self.BLOCKS / 2 - yidx - xidx,
                     yidx * self.block_y_size + shift + xidx + self.BLOCKS / 2 - yidx,
-                    self.block_x_size, self.block_y_size
+                    self.block_x_size,
+                    self.block_y_size,
                 )
 
-        pyxel.image(0).blt(0,0, 1, 0,0, pyxel.width,pyxel.height)
-        pyxel.blt(0,0, 1, 0,0, pyxel.width,pyxel.height)
+        pyxel.image(0).blt(0, 0, 1, 0, 0, pyxel.width, pyxel.height)
+        pyxel.blt(0, 0, 1, 0, 0, pyxel.width, pyxel.height)
 
         super().draw()
 
-class Tornado2(DemoPart):
-    TITLE_TEXT = "chaos tornado\nblitter feedback\nyou name it"
-    SEED_SIZE = 4
-    BLOCK_SIZE = 16
-    ROTATION = 65
-    PUSH = 2
-
-    def __init__(self, duration=None):
-        super().__init__(duration)
-        self.seed_start_x = (pyxel.width - self.SEED_SIZE) / 2
-        self.seed_start_y = (pyxel.height - self.SEED_SIZE) / 2
-
-        self.shift_pattern = tuple(
-            tuple(
-                self.ROTATION + pyxel.atan2(
-                    (yidx + 0.5) * self.BLOCK_SIZE - pyxel.height / 2,
-                    (xidx + 0.5) * self.BLOCK_SIZE - pyxel.width / 2,
-                )
-                for xidx in range(pyxel.width // self.BLOCK_SIZE)
-            )
-            for yidx in range(pyxel.height // self.BLOCK_SIZE)
-        )
-
-    def draw(self):
-        for y in range(self.SEED_SIZE):
-            for x in range(self.SEED_SIZE):
-                color = pyxel.rndi(1, 15)
-                pyxel.image(0).pset(self.seed_start_x + x, self.seed_start_y + y, color)
-        
-        shift = 0
-        for i in range(5):
-            shift = (shift << 1) | ((self.tick >> i) & 1)
-
-        for yidx in range(pyxel.height // self.BLOCK_SIZE):
-            for xidx in range(pyxel.width // self.BLOCK_SIZE):
-                dx = self.PUSH * pyxel.sin(self.shift_pattern[xidx][yidx])
-                dy = self.PUSH * pyxel.cos(self.shift_pattern[xidx][yidx])
-                pyxel.image(1).blt(
-                    xidx * self.BLOCK_SIZE + shift,
-                    yidx * self.BLOCK_SIZE + shift,
-                    0,
-                    xidx * self.BLOCK_SIZE + shift - dx,
-                    yidx * self.BLOCK_SIZE + shift - dy,
-                    self.BLOCK_SIZE, self.BLOCK_SIZE
-                )
-
-        pyxel.image(0).blt(0,0, 1, 0,0, pyxel.width,pyxel.height)
-        pyxel.blt(0,0, 1, 0,0, pyxel.width,pyxel.height)
-
-        super().draw()
 
 class App:
     def __init__(self):
         pyxel.init(128, 128, title="megademo", display_scale=4)
 
         self.demo_parts = [
-            #Tornado2(),
-            #Twister(),
             C64loader(120),
             GuruMeditation(),
             ShadeBobs(240),
@@ -753,6 +826,7 @@ class App:
             Tornado(360),
             Bouncy(240),
             AmigaBall(260),
+            Twister(240),
             MandelBrot(),
         ]
 
@@ -772,5 +846,6 @@ class App:
 
     def draw(self):
         self.active_part.draw()
+
 
 App()
